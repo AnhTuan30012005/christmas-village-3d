@@ -464,6 +464,15 @@ class ChristmasCity3D {
     this.trainCars = [];
     this.trainSmoke = [];
     this.workshopGear = null;
+    this.windmillBlades = null;
+    this.carouselGroup = null;
+    this.carouselRiders = [];
+    this.chairliftCabins = [];
+    this.skiers = [];
+    this.ranchReindeer = [];
+    this.skyLanterns = [];
+    this.fireworks = [];
+    this.fireworkTimer = 2.4;
     this.camFlight = null;
     this.walkthroughActive = false;
     this.walkthroughT = 0;
@@ -635,7 +644,32 @@ class ChristmasCity3D {
       blue: new THREE.MeshStandardMaterial({ color: 0x2060d8, roughness: 0.5 }),
       teal: new THREE.MeshStandardMaterial({ color: 0x0ea5a4, roughness: 0.45 }),
       iron: new THREE.MeshStandardMaterial({ color: 0x1b202b, roughness: 0.55, metalness: 0.65 }),
-      wreath: new THREE.MeshStandardMaterial({ color: 0x135424, roughness: 0.85 })
+      wreath: new THREE.MeshStandardMaterial({ color: 0x135424, roughness: 0.85 }),
+      iceCrystal: new THREE.MeshStandardMaterial({
+        color: 0xc8f0ff,
+        emissive: 0x26a8f5,
+        emissiveIntensity: 0.95,
+        roughness: 0.12,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.90
+      }),
+      iceDeep: new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0369a1,
+        emissiveIntensity: 0.80,
+        roughness: 0.16,
+        metalness: 0.30
+      }),
+      gingerbread: new THREE.MeshStandardMaterial({ color: 0x9c5522, roughness: 0.85 }),
+      icing: new THREE.MeshStandardMaterial({ color: 0xfff8f0, emissive: 0x38281c, emissiveIntensity: 0.25, roughness: 0.55 }),
+      carrot: new THREE.MeshStandardMaterial({ color: 0xff6b1a, roughness: 0.55 }),
+      lanternPaper: new THREE.MeshStandardMaterial({
+        color: 0xffdf80,
+        emissive: 0xff8c1a,
+        emissiveIntensity: 2.8,
+        roughness: 0.3
+      })
     };
   }
 
@@ -818,6 +852,12 @@ class ChristmasCity3D {
     this.buildWestIceLakeVillage();
     this.buildEastFairgroundVillage();
     this.buildNorthWorkshopVillage();
+    this.buildNW_IceCastleScene();
+    this.buildNE_SkiResortScene();
+    this.buildSW_WindmillReindeerScene();
+    this.buildSE_GingerbreadCarouselScene();
+    this.buildStreetMicroDetails();
+    this.buildSkyLanternsAndFireworks();
     this.buildMountainsAndPineHills();
     this.buildVillagers();
     this.buildBackgroundMoon();
@@ -1227,10 +1267,19 @@ class ChristmasCity3D {
     this.addBox(-w / 2, 0, -d / 2, w, 0.42, d, this.mat.stoneDark, grp);
     this.addBox(-w / 2, 0.42, -d / 2, w, h - 0.42, d, cfg.stone ? this.mat.stone : this.mat.timber, grp);
 
+    // Cozy Wooden Front Door + Evergreen Christmas Wreath & Red Bow (street-level detail for God-Mode close-ups!)
+    if (w >= 3.0) {
+      this.addBox(-0.34, 0.42, d / 2 + 0.02, 0.68, 1.24, 0.08, this.mat.woodDark, grp);
+      this.addBox(-0.26, 0.50, d / 2 + 0.06, 0.52, 1.10, 0.05, this.mat.woodMed, grp);
+      // Mini Christmas wreath + red bow on door
+      this.addBox(-0.14, 1.10, d / 2 + 0.11, 0.28, 0.28, 0.06, this.mat.wreath, grp);
+      this.addBox(-0.07, 1.32, d / 2 + 0.13, 0.14, 0.09, 0.06, this.mat.red, grp);
+    }
+
     // Multi-pane Glowing Windows on Front & Side
-    const winW = Math.min(0.75, w * 0.24);
-    const winH = 0.85;
-    const cols = w >= 3.2 ? [-w * 0.27, w * 0.27] : [0];
+    const winW = Math.min(0.72, w * 0.22);
+    const winH = 0.82;
+    const cols = w >= 3.0 ? [-w * 0.30, w * 0.30] : [0];
     cols.forEach(wx => {
       this.addBox(wx - winW / 2, 0.72, d / 2 + 0.03, winW, winH, 0.06, this.mat.window, grp);
       if (h > 2.65) {
@@ -2248,6 +2297,702 @@ class ChristmasCity3D {
     this.addStringGarland(-9.5, 2.5, cz - 3.5, 9.5, 2.5, cz - 3.5, 0.9, 14, true);
   }
 
+  // Reusable Cheerful Voxel Snowman (Carrot Nose, Top Hat, Red/Teal Scarf, Twig Arms)
+  placeSnowman(x, z, rot = 0, sc = 1.0) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.y = rot;
+    g.scale.setScalar(sc);
+    this.cityGroup.add(g);
+
+    this.addBox(-0.42, 0.0, -0.42, 0.84, 0.78, 0.84, this.mat.snow, g);
+    this.addBox(-0.32, 0.76, -0.32, 0.64, 0.60, 0.64, this.mat.snow, g);
+    // Warm scarf
+    const scarfMat = (Math.abs(Math.round(x + z)) % 2 === 0) ? this.mat.red : this.mat.teal;
+    this.addBox(-0.35, 1.28, -0.35, 0.70, 0.14, 0.70, scarfMat, g);
+    this.addBox(0.18, 0.96, 0.30, 0.14, 0.36, 0.08, scarfMat, g);
+    // Head + Carrot Nose + Coal Eyes
+    this.addBox(-0.24, 1.40, -0.24, 0.48, 0.46, 0.48, this.mat.snow, g);
+    this.addBox(-0.04, 1.58, 0.24, 0.08, 0.08, 0.28, this.mat.carrot, g);
+    this.addBox(-0.12, 1.68, 0.24, 0.06, 0.06, 0.04, this.mat.iron, g);
+    this.addBox(0.06, 1.68, 0.24, 0.06, 0.06, 0.04, this.mat.iron, g);
+    // Coal buttons
+    this.addBox(-0.04, 0.96, 0.32, 0.08, 0.08, 0.04, this.mat.iron, g);
+    this.addBox(-0.04, 1.14, 0.32, 0.08, 0.08, 0.04, this.mat.iron, g);
+    // Black Top Hat with Red Ribbon
+    this.addBox(-0.32, 1.85, -0.32, 0.64, 0.08, 0.64, this.mat.iron, g);
+    this.addBox(-0.22, 1.93, -0.22, 0.44, 0.36, 0.44, this.mat.iron, g);
+    this.addBox(-0.23, 1.94, -0.23, 0.46, 0.08, 0.46, this.mat.red, g);
+    // Twig arms
+    this.addBox(-0.76, 1.12, -0.03, 0.44, 0.06, 0.06, this.mat.woodDark, g);
+    this.addBox(0.32, 1.12, -0.03, 0.44, 0.06, 0.06, this.mat.woodDark, g);
+  }
+
+  // Reusable Giant Peppermint Striped Candy Cane
+  placeCandyCane(x, z, rot = 0, h = 2.6) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.y = rot;
+    this.cityGroup.add(g);
+
+    const segs = 9;
+    const segH = (h * 0.78) / segs;
+    for (let i = 0; i < segs; i++) {
+      this.addBox(-0.14, i * segH, -0.14, 0.28, segH + 0.01, 0.28, i % 2 === 0 ? this.mat.red : this.mat.white, g);
+    }
+    const topY = h * 0.78;
+    // Hooked peppermint top
+    this.addBox(-0.14, topY, -0.14, 0.28, 0.28, 0.28, this.mat.white, g);
+    this.addBox(0.10, topY + 0.20, -0.14, 0.32, 0.26, 0.28, this.mat.red, g);
+    this.addBox(0.36, topY + 0.08, -0.14, 0.26, 0.26, 0.28, this.mat.white, g);
+    this.addBox(0.42, topY - 0.18, -0.14, 0.26, 0.28, 0.28, this.mat.red, g);
+  }
+
+  // Reusable Snowy Wooden Park Bench
+  placeParkBench(x, z, rot = 0) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.y = rot;
+    this.cityGroup.add(g);
+    this.addBox(-0.85, 0, -0.26, 0.14, 0.42, 0.52, this.mat.iron, g);
+    this.addBox(0.71, 0, -0.26, 0.14, 0.42, 0.52, this.mat.iron, g);
+    this.addBox(-0.92, 0.40, -0.28, 1.84, 0.10, 0.56, this.mat.woodMed, g);
+    this.addBox(-0.92, 0.50, -0.28, 1.84, 0.42, 0.10, this.mat.woodMed, g);
+    this.addBox(-0.92, 0.92, -0.29, 1.84, 0.06, 0.12, this.mat.snow, g);
+  }
+
+  // 8A-5. NORTH-WEST SCENE — 🏰 CRYSTAL ICE CASTLE & GLOWING THERMAL SPRING (center: -42, -42)
+  buildNW_IceCastleScene() {
+    const cx = -42.0, cz = -42.0;
+    const grp = new THREE.Group();
+    grp.position.set(cx, 0, cz);
+    grp.rotation.y = Math.PI / 4; // face heroically toward the center of the valley!
+    this.cityGroup.add(grp);
+
+    // Shimmering Ice Plaza Terrace + Approach Stairs
+    const iceDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(13.2, 13.8, 0.30, 32),
+      this.mat.iceDeep
+    );
+    iceDisc.position.y = 0.12;
+    iceDisc.receiveShadow = true;
+    grp.add(iceDisc);
+
+    // Grand Crystal Keep Body
+    this.addBox(-4.6, 0.28, -4.2, 9.2, 5.4, 7.6, this.mat.iceCrystal, grp);
+    this.addBox(-3.0, 5.68, -2.8, 6.0, 3.6, 5.2, this.mat.iceCrystal, grp);
+    // Radiant Ice Portal Archway
+    this.addBox(-1.45, 0.28, 3.38, 2.90, 3.6, 0.18, this.mat.portal, grp);
+    this.addGlow(0, 2.4, 4.1, 5.5, grp, this.texGlowGold, 0.60);
+
+    // Glowing tall crystal windows on upper facade
+    [-2.8, 2.8].forEach(wx => {
+      this.addBox(wx - 0.42, 1.8, 3.42, 0.84, 2.2, 0.10, this.mat.window, grp);
+    });
+    this.addBox(-0.65, 6.4, 2.42, 1.30, 1.8, 0.12, this.mat.window, grp);
+
+    // 4 Corner Crystal Spires + Towering Central Diamond Spire
+    const buildIceSpire = (sx, sz, baseW, baseH, spireH) => {
+      this.addBox(sx - baseW / 2, 0.28, sz - baseW / 2, baseW, baseH, baseW, this.mat.iceDeep, grp);
+      this.addBox(sx - baseW * 0.58, baseH + 0.2, sz - baseW * 0.58, baseW * 1.16, 0.24, baseW * 1.16, this.mat.snow, grp);
+      const levels = 10;
+      for (let i = 0; i < levels; i++) {
+        const u = i / levels;
+        const w = baseW * (1 - u * 0.92);
+        this.addBox(sx - w / 2, baseH + 0.44 + u * spireH, sz - w / 2, w, spireH / levels + 0.04, w, i % 2 === 0 ? this.mat.iceCrystal : this.mat.snow, grp);
+      }
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), this.mat.gold);
+      gem.position.set(sx, baseH + spireH + 0.85, sz);
+      grp.add(gem);
+      this.addGlow(sx, baseH + spireH + 0.85, sz, 3.2, grp, this.texGlowGold, 0.70);
+    };
+    buildIceSpire(-4.8, 3.6, 2.0, 6.2, 5.2);
+    buildIceSpire(4.8, 3.6, 2.0, 6.2, 5.2);
+    buildIceSpire(-4.8, -4.0, 2.0, 6.8, 5.6);
+    buildIceSpire(4.8, -4.0, 2.0, 6.8, 5.6);
+    buildIceSpire(0, -0.4, 2.8, 9.2, 7.6); // Tallest sovereign crystal tower!
+
+    // Castle luminous cyan-gold illumination
+    const iceLight = new THREE.PointLight(0x52c8ff, 4.2, 28.0, 1.3);
+    iceLight.position.set(0, 6.5, 6.0);
+    grp.add(iceLight);
+
+    // Giant Snow King Snowman + Ice Lantern Avenue + 2 Cozy Hermit Chalets nearby
+    this.placeSnowman(cx + 8.5, cz + 6.5, Math.PI / 4, 1.85);
+    this.placeSnowman(cx + 5.0, cz + 10.2, Math.PI / 3, 1.25);
+    this.createCottage({ x: cx - 14.0, z: cz + 9.0, rot: 0.9, w: 3.5, d: 2.8, h: 3.0, rh: 1.8, stone: false, smoke: true, lights: true });
+    this.createCottage({ x: cx + 9.5, z: cz - 14.0, rot: -0.6, w: 3.4, d: 2.7, h: 2.9, rh: 1.8, stone: true, smoke: true, lights: true });
+
+    // Glowing lantern path connecting Ice Castle toward the valley
+    [
+      [cx + 11.5, cz + 11.5], [cx + 16.5, cz + 16.5],
+      [cx + 6.5, cz + 15.0], [cx + 15.0, cz + 6.5]
+    ].forEach(([lx, lz]) => this.placeStreetLamp(lx, lz, false));
+  }
+
+  // 8A-6. NORTH-EAST SCENE — ⛷ ALPINE SKI SLOPE, MOVING WOODEN CHAIRLIFT & SKI CHALET (center: +42, -42)
+  buildNE_SkiResortScene() {
+    const cx = 42.0, cz = -42.0;
+    const grp = new THREE.Group();
+    grp.position.set(cx, 0, cz);
+    grp.rotation.y = -Math.PI / 4; // face ski slope cleanly toward Central Plaza!
+    this.cityGroup.add(grp);
+
+    // 1. Stepped Snowy Alpine Ski Slope (rising along -Z from base z = +10 up to summit z = -14, height = 13.5)
+    const slopeSteps = 18;
+    for (let i = 0; i < slopeSteps; i++) {
+      const u = i / slopeSteps;
+      const yH = 0.6 + u * 13.0;
+      const zPos = 8.5 - u * 22.0;
+      const wSpan = 16.5 - u * 5.0;
+      this.addBox(-wSpan / 2, 0, zPos - 1.5, wSpan, yH, 2.2, i % 3 === 0 ? this.mat.snowShadow : this.mat.snow, grp);
+      // Slalom Red & Blue Flags lining the ski run!
+      if (i % 3 === 1 && i < slopeSteps - 2) {
+        const fx = (i % 2 === 0 ? -3.4 : 3.4);
+        this.addBox(fx - 0.05, yH, zPos, 0.10, 1.35, 0.10, this.mat.iron, grp);
+        this.addBox(fx + 0.05, yH + 0.85, zPos - 0.04, 0.55, 0.36, 0.08, i % 2 === 0 ? this.mat.red : this.mat.blue, grp);
+      }
+    }
+
+    // 2. Alpine Wooden Ski Chairlift (3 Steel Pylons + Overhead Cable + 4 Animated Moving Glowing Gondola Cabins!)
+    const liftX = 6.2;
+    const pylons = [
+      { z: 9.5, h: 4.5, groundY: 0 },
+      { z: -2.0, h: 10.5, groundY: 5.5 },
+      { z: -13.5, h: 17.5, groundY: 13.2 }
+    ];
+    pylons.forEach(p => {
+      this.addBox(liftX - 0.16, p.groundY, p.z - 0.16, 0.32, p.h - p.groundY, 0.32, this.mat.iron, grp);
+      this.addBox(liftX - 1.2, p.h - 0.15, p.z - 0.14, 2.4, 0.24, 0.28, this.mat.iron, grp);
+      this.addGlow(liftX, p.h + 0.2, p.z, 1.8, grp, this.texGlowGold, 0.55);
+    });
+    // Overhead cable beam
+    const cableLen = Math.hypot(23.0, 13.0);
+    const cablePitch = Math.atan2(13.0, 23.0);
+    [-0.9, 0.9].forEach(ox => {
+      const cable = new THREE.Mesh(this.unitBox, this.mat.iron);
+      cable.position.set(liftX + ox, 11.0, -2.0);
+      cable.scale.set(0.06, 0.06, cableLen);
+      cable.rotation.x = cablePitch;
+      grp.add(cable);
+    });
+
+    // 4 Moving Glowing Gondola Cabins traveling up & down the chairlift!
+    for (let c = 0; c < 4; c++) {
+      const cab = new THREE.Group();
+      this.addBox(-0.04, 0, -0.04, 0.08, 0.75, 0.08, this.mat.iron, cab);
+      this.addBox(-0.48, -0.95, -0.48, 0.96, 0.45, 0.96, c % 2 === 0 ? this.mat.red : this.mat.gold, cab);
+      this.addBox(-0.44, -0.50, -0.44, 0.88, 0.42, 0.88, this.mat.window, cab);
+      this.addBox(-0.52, -0.08, -0.52, 1.04, 0.12, 1.04, this.mat.snow, cab);
+      this.addGlow(0, -0.35, 0, 2.2, cab, this.texGlowWarm, 0.55);
+      grp.add(cab);
+      this.chairliftCabins.push({ group: cab, t: c / 4, goingUp: c % 2 === 0, liftX });
+    }
+
+    // 3. 6 Animated Skiers carving zig-zag down the snowy ski run!
+    const skiCoats = [this.mat.red, this.mat.blue, this.mat.teal, this.mat.gold, this.mat.red, this.mat.blue];
+    for (let s = 0; s < 6; s++) {
+      const sk = new THREE.Group();
+      // Skis + Boots + Winter Jacket + Head + Helmet + Ski Poles
+      this.addBox(-0.20, 0, -0.55, 0.10, 0.05, 1.15, this.mat.gold, sk);
+      this.addBox(0.10, 0, -0.55, 0.10, 0.05, 1.15, this.mat.gold, sk);
+      this.addBox(-0.18, 0.05, -0.14, 0.36, 0.72, 0.28, skiCoats[s], sk);
+      this.addBox(-0.14, 0.78, -0.14, 0.28, 0.28, 0.28, this.mat.white, sk);
+      grp.add(sk);
+      this.skiers.push({ group: sk, t: s / 6, laneOffset: (s % 3 - 1) * 1.4, phase: s * 1.3 });
+    }
+
+    // 4. Warm Alpine Ski Chalet Lodge + Outdoor Campfire at the Foot of the Slope!
+    const lodge = new THREE.Group();
+    lodge.position.set(-7.5, 0, 11.5);
+    lodge.rotation.y = 0.45;
+    grp.add(lodge);
+    this.addBox(-3.2, 0, -2.2, 6.4, 3.2, 4.4, this.mat.timber, lodge);
+    this.addBox(-2.6, 0.7, 2.24, 1.9, 1.5, 0.08, this.mat.window, lodge);
+    this.addBox(0.7, 0.7, 2.24, 1.9, 1.5, 0.08, this.mat.window, lodge);
+    for (let r = 0; r < 8; r++) {
+      const span = 5.4 * (1 - r / 8.2);
+      this.addBox(-3.6, 3.2 + r * 0.28, -span / 2, 7.2, 0.30, span, r > 0 ? this.mat.snow : this.mat.roofDark, lodge);
+    }
+    this.addGroundGlow(0, 2.8, 9.0, lodge);
+
+    const skiLight = new THREE.PointLight(0xffb448, 3.8, 26.0, 1.3);
+    skiLight.position.set(0, 8.0, 9.0);
+    grp.add(skiLight);
+
+    // World-space campfire + snowman at ski base
+    this.placeCampfire(cx - 10.5, cz + 11.5, false);
+    this.placeSnowman(cx - 4.5, cz + 14.5, -0.6, 1.15);
+    this.placeStreetLamp(cx - 13.5, cz + 13.5, false);
+    this.placeStreetLamp(cx - 7.5, cz + 16.5, false);
+  }
+
+  // 8A-7. SOUTH-WEST SCENE — 🦌 GLOWING CHRISTMAS WINDMILL, REINDEER RANCH & SNOWMAN PARK (center: -40, +40)
+  buildSW_WindmillReindeerScene() {
+    const cx = -40.0, cz = 40.0;
+
+    // 1. HERO LANDMARK: Tall Illuminated Alpine Christmas Windmill at (cx - 4.0, cz - 3.0)
+    const wm = new THREE.Group();
+    wm.position.set(cx - 4.0, 0, cz - 3.0);
+    wm.rotation.y = 0.65;
+    this.cityGroup.add(wm);
+
+    // Tapered Stone & Timber Tower (Height = 9.5)
+    for (let t = 0; t < 10; t++) {
+      const u = t / 10;
+      const w = 4.6 - u * 1.6;
+      this.addBox(-w / 2, t * 0.92, -w / 2, w, 0.94, w, t < 3 ? this.mat.stone : this.mat.timber, wm);
+    }
+    // Glowing Windmill Door & Upper Windows
+    this.addBox(-0.65, 0.1, 2.26, 1.30, 1.85, 0.10, this.mat.portal, wm);
+    this.addBox(-0.45, 4.2, 1.92, 0.90, 1.05, 0.10, this.mat.window, wm);
+    this.addBox(-0.45, 6.8, 1.70, 0.90, 0.95, 0.10, this.mat.window, wm);
+
+    // Conical Snowy Cap Roof
+    for (let r = 0; r < 8; r++) {
+      const w = 3.5 * (1 - r / 8.2);
+      this.addBox(-w / 2, 9.2 + r * 0.30, -w / 2, w, 0.32, w, r > 0 ? this.mat.snow : this.mat.red, wm);
+    }
+
+    // Rotating 4-Sail Golden-Lit Windmill Blades!
+    const blades = new THREE.Group();
+    blades.position.set(0, 8.2, 1.95);
+    wm.add(blades);
+    this.windmillBlades = blades;
+    this.addBox(-0.35, -0.35, -0.25, 0.70, 0.70, 0.50, this.mat.gold, blades);
+    this.addGlow(0, 0, 0.4, 3.6, blades, this.texGlowGold, 0.72);
+
+    for (let b = 0; b < 4; b++) {
+      const arm = new THREE.Group();
+      arm.rotation.z = (b / 4) * TAU;
+      blades.add(arm);
+      // Main wooden spar + warm lattice sails + glowing golden LED bulbs along edge!
+      this.addBox(-0.12, 0.25, -0.08, 0.24, 5.4, 0.16, this.mat.woodDark, arm);
+      this.addBox(0.12, 1.1, -0.04, 1.15, 4.3, 0.08, this.mat.icing, arm);
+      for (let l = 0; l < 6; l++) {
+        this.addBox(0.12, 1.1 + l * 0.78, -0.06, 1.20, 0.08, 0.12, this.mat.woodMed, arm);
+        const bulb = new THREE.Mesh(this.bulbGeo, this.bulbMats[l % this.bulbMats.length]);
+        bulb.scale.setScalar(1.3);
+        bulb.position.set(1.28, 1.1 + l * 0.78, 0.08);
+        arm.add(bulb);
+      }
+    }
+    const wmLight = new THREE.PointLight(0xffb236, 3.8, 24.0, 1.35);
+    wmLight.position.set(0, 5.5, 4.5);
+    wm.add(wmLight);
+    this.addGroundGlow(cx - 4.0, cz - 3.0, 13.0, this.cityGroup);
+
+    // 2. Fenced Reindeer Sanctuary Pasture with 8 Animated Voxel Reindeer + Red Barn!
+    const px = cx + 6.0, pz = cz + 4.5;
+    const fenceW = 11.0, fenceD = 9.0;
+    for (let x = -fenceW / 2; x <= fenceW / 2; x += 2.2) {
+      [-fenceD / 2, fenceD / 2].forEach(z => {
+        this.addBox(px + x - 0.08, 0, pz + z - 0.08, 0.16, 0.85, 0.16, this.mat.woodDark);
+        this.addBox(px + x - 0.10, 0.85, pz + z - 0.10, 0.20, 0.08, 0.20, this.mat.snow);
+      });
+    }
+    for (let z = -fenceD / 2; z <= fenceD / 2; z += 2.25) {
+      [-fenceW / 2, fenceW / 2].forEach(x => {
+        this.addBox(px + x - 0.08, 0, pz + z - 0.08, 0.16, 0.85, 0.16, this.mat.woodDark);
+      });
+    }
+    this.addBox(px - fenceW / 2, 0.52, pz - fenceD / 2, fenceW, 0.10, 0.10, this.mat.woodMed);
+    this.addBox(px - fenceW / 2, 0.52, pz + fenceD / 2, fenceW, 0.10, 0.10, this.mat.woodMed);
+    this.addBox(px - fenceW / 2, 0.52, pz - fenceD / 2, 0.10, 0.10, fenceD, this.mat.woodMed);
+    this.addBox(px + fenceW / 2, 0.52, pz - fenceD / 2, 0.10, 0.10, fenceD, this.mat.woodMed);
+
+    // 8 Roaming/Grazing Voxel Reindeer inside the snowy sanctuary
+    const deerMat = new THREE.MeshStandardMaterial({ color: 0x7a4b2a, roughness: 0.84 });
+    for (let i = 0; i < 8; i++) {
+      const dg = new THREE.Group();
+      this.addBox(-0.18, 0.34, -0.45, 0.36, 0.34, 0.90, deerMat, dg);
+      this.addBox(-0.11, 0.66, 0.24, 0.22, 0.34, 0.22, deerMat, dg);
+      this.addBox(-0.12, 0.92, 0.22, 0.24, 0.22, 0.36, deerMat, dg);
+      this.addBox(-0.22, 1.14, 0.24, 0.06, 0.26, 0.06, this.mat.gold, dg);
+      this.addBox(0.16, 1.14, 0.24, 0.06, 0.26, 0.06, this.mat.gold, dg);
+      [[-0.14, -0.36], [0.06, -0.36], [-0.14, 0.28], [0.06, 0.28]].forEach(([lx, lz]) => {
+        this.addBox(lx, 0, lz, 0.09, 0.36, 0.09, deerMat, dg);
+      });
+      if (i === 0) {
+        this.addBox(-0.05, 0.98, 0.58, 0.10, 0.10, 0.10, this.mat.red, dg);
+      }
+      this.cityGroup.add(dg);
+      this.ranchReindeer.push({
+        group: dg,
+        cx: px + ((i % 3) - 1) * 2.4,
+        cz: pz + (i < 4 ? -1.8 : 1.8),
+        r: 1.1 + (i % 3) * 0.45,
+        angle: (i / 8) * TAU,
+        speed: (0.28 + (i % 3) * 0.08) * (i % 2 === 0 ? 1 : -1)
+      });
+    }
+
+    // Cozy Red Reindeer Barn + Snowman Garden (6 Cheerful Snowmen + Giant Candy Canes!)
+    this.createCottage({ x: px + 8.5, z: pz - 3.5, rot: -1.35, w: 4.2, d: 3.2, h: 3.2, rh: 2.0, stone: false, smoke: true, lights: true });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU;
+      this.placeSnowman(cx - 8.5 + Math.cos(a) * 4.2, cz + 7.5 + Math.sin(a) * 4.2, -a + Math.PI / 2, 0.9 + (i % 3) * 0.22);
+    }
+    this.placeCandyCane(cx - 8.5, cz + 7.5, 0.4, 3.6);
+    this.placeStreetLamp(cx + 1.5, cz - 1.5, false);
+    this.placeStreetLamp(cx - 2.0, cz + 8.0, false);
+    this.placeStreetLamp(cx + 10.5, cz + 8.5, false);
+  }
+
+  // 8A-8. SOUTH-EAST SCENE — 🎠 FESTIVE MERRY-GO-ROUND CAROUSEL & GINGERBREAD CANDY VILLAGE (center: +40, +40)
+  buildSE_GingerbreadCarouselScene() {
+    const cx = 40.0, cz = 40.0;
+
+    // 1. Warm Cobblestone Sweet Square
+    const sweetPlaza = new THREE.Mesh(
+      new THREE.CylinderGeometry(13.5, 13.8, 0.24, 40),
+      this.mat.cobble
+    );
+    sweetPlaza.position.set(cx, -0.09, cz);
+    sweetPlaza.receiveShadow = true;
+    this.cityGroup.add(sweetPlaza);
+
+    // 2. HERO LANDMARK: ROTATING FESTIVE CAROUSEL (Merry-Go-Round) at (cx, cz)
+    const cBase = new THREE.Group();
+    cBase.position.set(cx, 0, cz);
+    this.cityGroup.add(cBase);
+
+    // Raised ornate platform
+    const deck = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.5, 0.55, 24), this.mat.red);
+    deck.position.y = 0.275;
+    cBase.add(deck);
+    const deckTrim = new THREE.Mesh(new THREE.CylinderGeometry(5.3, 5.3, 0.14, 24), this.mat.gold);
+    deckTrim.position.y = 0.56;
+    cBase.add(deckTrim);
+
+    // Rotating Carousel Core + 8 Bobbing Horses/Reindeer + Striped Canopy Roof!
+    const spin = new THREE.Group();
+    spin.position.y = 0.58;
+    cBase.add(spin);
+    this.carouselGroup = spin;
+
+    // Glowing Golden Center Column
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.15, 4.4, 16), this.mat.window);
+    col.position.y = 2.2;
+    spin.add(col);
+    this.addGlow(0, 2.6, 0, 5.2, spin, this.texGlowGold, 0.65);
+
+    // 8 Golden Poles + Colorful Bobbing Wooden Horses + Canopy Stripes
+    const horseMats = [this.mat.white, this.mat.red, this.mat.gold, this.mat.teal];
+    const horseCount = 8;
+    for (let i = 0; i < horseCount; i++) {
+      const a = (i / horseCount) * TAU;
+      const hx = Math.cos(a) * 3.7;
+      const hz = Math.sin(a) * 3.7;
+      // Brass pole
+      this.addBox(hx - 0.05, 0, hz - 0.05, 0.10, 4.2, 0.10, this.mat.gold, spin);
+      // Horse group that bobs up and down smoothly
+      const hg = new THREE.Group();
+      hg.position.set(hx, 1.35, hz);
+      hg.rotation.y = -a + Math.PI;
+      spin.add(hg);
+      const hm = horseMats[i % horseMats.length];
+      this.addBox(-0.20, 0, -0.45, 0.40, 0.38, 0.90, hm, hg);
+      this.addBox(-0.14, 0.34, 0.22, 0.28, 0.38, 0.24, hm, hg);
+      this.addBox(-0.15, 0.62, 0.22, 0.30, 0.24, 0.40, hm, hg);
+      this.addBox(-0.22, 0.10, -0.18, 0.44, 0.30, 0.36, this.mat.gold, hg); // saddle
+      this.carouselRiders.push({ group: hg, phase: (i / horseCount) * TAU });
+
+      // Glowing canopy border bulb
+      const bulb = new THREE.Mesh(this.bulbGeo, this.bulbMats[i % this.bulbMats.length]);
+      bulb.scale.setScalar(1.6);
+      bulb.position.set(Math.cos(a) * 5.2, 4.25, Math.sin(a) * 5.2);
+      spin.add(bulb);
+    }
+
+    // Striped Red/White Conical Canopy Roof + Golden Crown Finial
+    for (let s = 0; s < 16; s++) {
+      const a = (s / 16) * TAU;
+      const wedge = new THREE.Mesh(new THREE.ConeGeometry(5.5, 2.6, 16), s % 2 === 0 ? this.mat.red : this.mat.white);
+      if (s === 0) {
+        wedge.position.y = 5.5;
+        spin.add(wedge);
+      }
+      // Red/white striped valance scallops around rim
+      this.addBox(Math.cos(a) * 4.9 - 0.35, 3.95, Math.sin(a) * 4.9 - 0.35, 0.70, 0.46, 0.70, s % 2 === 0 ? this.mat.red : this.mat.white, spin);
+    }
+    const finial = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), this.mat.gold);
+    finial.position.y = 7.1;
+    spin.add(finial);
+    this.addGlow(0, 7.1, 0, 3.6, spin, this.texGlowGold, 0.80);
+
+    const carLight = new THREE.PointLight(0xffb838, 4.2, 26.0, 1.3);
+    carLight.position.set(cx, 5.5, cz);
+    this.cityGroup.add(carLight);
+    this.addGroundGlow(cx, cz, 15.0, this.cityGroup);
+
+    // 3. 3 Enchanting Gingerbread Houses (Warm Cookie Walls + White Frosting Trim + Candy Roofs!)
+    const buildGingerbreadHouse = (gx, gz, rot) => {
+      const g = new THREE.Group();
+      g.position.set(gx, 0, gz);
+      g.rotation.y = rot;
+      this.cityGroup.add(g);
+
+      const w = 4.0, d = 3.2, h = 3.0;
+      this.addBox(-w / 2, 0, -d / 2, w, 0.35, d, this.mat.icing, g);
+      this.addBox(-w / 2, 0.35, -d / 2, w, h - 0.35, d, this.mat.gingerbread, g);
+      // White sugar frosting corners & doorway arch
+      [-w / 2 - 0.04, w / 2 - 0.14].forEach(fx => {
+        this.addBox(fx, 0.35, d / 2 - 0.10, 0.18, h - 0.35, 0.18, this.mat.icing, g);
+      });
+      this.addBox(-0.48, 0.35, d / 2 + 0.03, 0.96, 1.48, 0.08, this.mat.portal, g);
+      [-1.25, 1.25].forEach(wx => {
+        this.addBox(wx - 0.38, 1.15, d / 2 + 0.03, 0.76, 0.86, 0.08, this.mat.window, g);
+      });
+      // Frosting-dripped Gingerbread Gabled Roof studded with colorful gumdrop bulbs!
+      for (let r = 0; r < 8; r++) {
+        const span = (w + 0.6) * (1 - r / 8.2);
+        this.addBox(-span / 2, h + r * 0.25, -d / 2 - 0.28, span, 0.27, d + 0.56, r % 2 === 0 ? this.mat.icing : this.mat.gingerbread, g);
+      }
+      for (let i = 0; i <= 8; i++) {
+        const bx = -w / 2 - 0.2 + (i / 8) * (w + 0.4);
+        const gum = new THREE.Mesh(this.bulbGeo, this.bulbMats[i % this.bulbMats.length]);
+        gum.scale.setScalar(1.45);
+        gum.position.set(bx, h + 0.04, d / 2 + 0.32);
+        g.add(gum);
+      }
+      this.addGroundGlow(0, d / 2 + 1.5, 6.5, g);
+    };
+
+    buildGingerbreadHouse(cx + 10.5, cz - 7.5, -0.85);
+    buildGingerbreadHouse(cx + 12.0, cz + 4.5, -1.75);
+    buildGingerbreadHouse(cx + 3.5, cz + 12.0, -2.75);
+    buildGingerbreadHouse(cx - 8.5, cz + 10.2, 2.45);
+
+    // Giant Candy Cane Alley + Swirl Lollipops + Snowmen welcoming visitors!
+    [
+      [cx - 8.0, cz - 6.0, 0.6], [cx - 5.2, cz - 9.2, 0.8],
+      [cx + 6.5, cz - 10.5, -0.5], [cx - 11.2, cz + 2.5, 1.4]
+    ].forEach(([kx, kz, kr]) => this.placeCandyCane(kx, kz, kr, 3.0));
+    this.placeSnowman(cx - 6.5, cz - 2.0, 0.7, 1.15);
+    this.placeCampfire(cx - 8.5, cz + 3.0, false);
+
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU + 0.3;
+      this.placeStreetLamp(cx + Math.cos(a) * 9.5, cz + Math.sin(a) * 9.5, false);
+    }
+  }
+
+  // 8A-9. STREET-LEVEL MICRO-DETAILS (Snowmen, Park Benches, Candy Canes & 4-Way Wooden Signpost!)
+  buildStreetMicroDetails() {
+    // 1. 4-Way Festive Wooden Signpost near Central Plaza Entrance (x = 4.6, z = 12.2)
+    const sp = new THREE.Group();
+    sp.position.set(4.6, 0, 12.2);
+    this.cityGroup.add(sp);
+    this.addBox(-0.10, 0, -0.10, 0.20, 2.75, 0.20, this.mat.woodDark, sp);
+    this.addBox(-0.12, 2.75, -0.12, 0.24, 0.14, 0.24, this.mat.snow, sp);
+    [
+      { y: 2.35, rot: 0.0, mat: this.mat.woodMed },
+      { y: 2.00, rot: Math.PI / 2, mat: this.mat.red },
+      { y: 1.65, rot: Math.PI, mat: this.mat.woodMed },
+      { y: 1.30, rot: -Math.PI / 2, mat: this.mat.teal }
+    ].forEach(b => {
+      const plank = new THREE.Mesh(this.unitBox, b.mat);
+      plank.position.set(0, b.y, 0);
+      plank.scale.set(1.35, 0.24, 0.08);
+      plank.rotation.y = b.rot;
+      sp.add(plank);
+    });
+    this.addGlow(0, 2.9, 0, 1.8, sp, this.texGlowGold, 0.55);
+
+    // 2. Cheerful Snowmen scattered at Plaza Corners & Welcome Archway!
+    [
+      { x: -6.2, z: 9.8, rot: 0.45, sc: 1.05 },
+      { x: 6.4, z: 9.4, rot: -0.45, sc: 1.0 },
+      { x: -5.6, z: 45.2, rot: 0.8, sc: 1.15 },
+      { x: 5.6, z: 45.2, rot: -0.8, sc: 1.15 },
+      { x: -14.2, z: -3.2, rot: 1.4, sc: 0.95 },
+      { x: 14.2, z: 3.2, rot: -1.4, sc: 0.95 }
+    ].forEach(s => this.placeSnowman(s.x, s.z, s.rot, s.sc));
+
+    // 3. Snowy Wooden Park Benches around the Grand Central Square!
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * TAU + Math.PI / 8;
+      const bx = Math.cos(a) * 9.8;
+      const bz = Math.sin(a) * 9.8;
+      this.placeParkBench(bx, bz, Math.atan2(-bx, -bz));
+    }
+
+    // 4. Giant Peppermint Candy Canes flanking the Welcome Archway & Grand Square entrances
+    [
+      [-4.6, 48.8, 0.2], [4.6, 48.8, -0.2],
+      [-3.8, 13.8, 0.3], [3.8, 13.8, -0.3]
+    ].forEach(([kx, kz, kr]) => this.placeCandyCane(kx, kz, kr, 2.6));
+  }
+
+  // 8A-10. FLOATING WARM SKY LANTERNS & INTERACTIVE CHRISTMAS FIREWORKS!
+  buildSkyLanternsAndFireworks() {
+    // 1. 28 Warm Floating Paper Sky Lanterns drifting slowly upward over all 9 village zones!
+    const lGeo = new THREE.BoxGeometry(0.38, 0.52, 0.38);
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * TAU;
+      const r = 10 + (i % 5) * 14;
+      const mesh = new THREE.Mesh(lGeo, this.mat.lanternPaper);
+      const startY = 8 + (i % 7) * 5.2;
+      mesh.position.set(Math.cos(a) * r, startY, Math.sin(a) * r);
+      this.scene.add(mesh);
+      this.skyLanterns.push({
+        mesh,
+        baseX: Math.cos(a) * r,
+        baseZ: Math.sin(a) * r,
+        y: startY,
+        speed: 0.45 + (i % 4) * 0.14,
+        seed: Math.random() * TAU
+      });
+    }
+
+    // 2. Fireworks Spark Geometry & Materials (pre-created for zero GC lag)
+    this.fwSparkGeo = new THREE.OctahedronGeometry(0.18, 0);
+    const fwColors = [0xffd84d, 0xff3b5c, 0x38bdf8, 0x4ade80, 0xc084fc, 0xff922b];
+    this.fwMaterials = fwColors.map(hex => new THREE.MeshBasicMaterial({
+      color: hex,
+      transparent: true,
+      opacity: 1.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    }));
+  }
+
+  launchFirework(tx = null, tz = null) {
+    if (!this.fwSparkGeo) return;
+    const spots = [
+      [22, -16], [-42, -42], [56, -2], [-54, 0], [0, -56], [40, 40], [-40, 40], [0, 0]
+    ];
+    const pick = spots[Math.floor(Math.random() * spots.length)];
+    const x = tx !== null ? tx : pick[0] + (Math.random() - 0.5) * 14;
+    const z = tz !== null ? tz : pick[1] + (Math.random() - 0.5) * 14;
+    const y = 26 + Math.random() * 14;
+
+    const baseMat = this.fwMaterials[Math.floor(Math.random() * this.fwMaterials.length)].clone();
+    const sparks = [];
+    const count = 28;
+    for (let i = 0; i < count; i++) {
+      const m = new THREE.Mesh(this.fwSparkGeo, baseMat);
+      m.position.set(x, y, z);
+      this.scene.add(m);
+      // Uniform Fibonacci spherical burst
+      const phi = Math.acos(1 - 2 * (i + 0.5) / count);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const spd = 7.5 + Math.random() * 5.0;
+      sparks.push({
+        mesh: m,
+        vx: Math.sin(phi) * Math.cos(theta) * spd,
+        vy: Math.cos(phi) * spd,
+        vz: Math.sin(phi) * Math.sin(theta) * spd
+      });
+    }
+    // Flash burst halo
+    const halo = this.addGlow(x, y, z, 11.0, this.scene, this.texGlowGold, 0.90);
+    this.fireworks.push({ sparks, mat: baseMat, halo, age: 0, life: 2.3 });
+  }
+
+  launchFireworkSalvo(count = 4) {
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => this.launchFirework(), i * 260);
+    }
+  }
+
+  updateNewScenes(dt) {
+    // 1. Rotating Christmas Windmill Sails
+    if (this.windmillBlades) {
+      this.windmillBlades.rotation.z -= dt * 0.42;
+    }
+
+    // 2. Rotating Merry-Go-Round Carousel & Bobbing Horses
+    if (this.carouselGroup) {
+      this.carouselGroup.rotation.y += dt * 0.48;
+      for (let i = 0; i < this.carouselRiders.length; i++) {
+        const r = this.carouselRiders[i];
+        r.group.position.y = 1.35 + Math.sin(this.time * 3.2 + r.phase) * 0.30;
+      }
+    }
+
+    // 3. Moving Alpine Ski Chairlift Cabins
+    for (let i = 0; i < this.chairliftCabins.length; i++) {
+      const c = this.chairliftCabins[i];
+      c.t = (c.t + dt * 0.085) % 1.0;
+      const u = c.goingUp ? c.t : (1 - c.t);
+      const zPos = 9.5 - u * 23.0;
+      const yPos = 4.5 + u * 13.0;
+      c.group.position.set(c.liftX + (c.goingUp ? 0.9 : -0.9), yPos, zPos);
+      c.group.rotation.z = Math.sin(this.time * 2.5 + i) * 0.06;
+    }
+
+    // 4. Carving Alpine Skiers gliding down the snowy slope!
+    for (let i = 0; i < this.skiers.length; i++) {
+      const sk = this.skiers[i];
+      sk.t = (sk.t + dt * 0.14) % 1.0;
+      const u = 1.0 - sk.t; // top (1) -> bottom (0)
+      const zPos = 8.5 - u * 20.5;
+      const yPos = 0.65 + u * 12.6;
+      const xPos = sk.laneOffset + Math.sin(sk.t * Math.PI * 3.5 + sk.phase) * 2.2;
+      const dx = Math.cos(sk.t * Math.PI * 3.5 + sk.phase) * 2.2;
+      sk.group.position.set(xPos, yPos, zPos);
+      sk.group.rotation.y = Math.atan2(dx, 2.5);
+      sk.group.rotation.x = 0.45;
+    }
+
+    // 5. Roaming Reindeer in the Sanctuary
+    for (let i = 0; i < this.ranchReindeer.length; i++) {
+      const rd = this.ranchReindeer[i];
+      rd.angle += rd.speed * dt;
+      rd.group.position.set(rd.cx + Math.cos(rd.angle) * rd.r, 0, rd.cz + Math.sin(rd.angle) * rd.r);
+      const dx = -Math.sin(rd.angle) * rd.speed;
+      const dz = Math.cos(rd.angle) * rd.speed;
+      rd.group.rotation.y = Math.atan2(dx, dz);
+      rd.group.position.y = Math.abs(Math.sin(this.time * 4.0 + i)) * 0.08;
+    }
+
+    // 6. Floating Warm Sky Lanterns
+    for (let i = 0; i < this.skyLanterns.length; i++) {
+      const sl = this.skyLanterns[i];
+      sl.y += sl.speed * dt;
+      if (sl.y > 46) sl.y = 7.0;
+      sl.mesh.position.set(
+        sl.baseX + Math.sin(this.time * 0.5 + sl.seed) * 1.8,
+        sl.y,
+        sl.baseZ + Math.cos(this.time * 0.4 + sl.seed) * 1.8
+      );
+      sl.mesh.rotation.y += dt * 0.4;
+    }
+
+    // 7. Periodic & Interactive Fireworks Bursts
+    this.fireworkTimer -= dt;
+    if (this.fireworkTimer <= 0) {
+      this.fireworkTimer = 7.5 + Math.random() * 4.5;
+      this.launchFirework();
+    }
+    for (let i = this.fireworks.length - 1; i >= 0; i--) {
+      const fw = this.fireworks[i];
+      fw.age += dt;
+      const u = fw.age / fw.life;
+      if (u >= 1.0) {
+        fw.sparks.forEach(s => this.scene.remove(s.mesh));
+        fw.mat.dispose();
+        if (fw.halo) this.scene.remove(fw.halo);
+        this.fireworks.splice(i, 1);
+        continue;
+      }
+      fw.mat.opacity = Math.pow(1 - u, 1.4);
+      if (fw.halo) fw.halo.material.opacity = Math.max(0, 0.9 * (1 - u * 3.5));
+      for (let k = 0; k < fw.sparks.length; k++) {
+        const s = fw.sparks[k];
+        s.mesh.position.x += s.vx * dt;
+        s.mesh.position.y += s.vy * dt;
+        s.mesh.position.z += s.vz * dt;
+        s.vy -= 4.8 * dt; // soft gravity
+        s.vx *= 0.985;
+        s.vz *= 0.985;
+        s.mesh.scale.setScalar(Math.max(0.1, 1.15 - u * 0.85));
+      }
+    }
+  }
+
   // Dynamic Signboard Updater (triggered by 💌 Lời Chúc modal)
   setArchwayText(text) {
     if (!this.archwaySignMat) return;
@@ -2298,11 +3043,15 @@ class ChristmasCity3D {
       return grp;
     };
 
-    // Helper: check whether (x, z) falls inside any of the 3 satellite villages or South Gateway corridor
+    // Helper: check whether (x, z) falls inside any of the 8 surrounding scenes/villages or South Gateway corridor
     const inVillageFootprint = (x, z) => {
-      if (Math.hypot(x + 54, z) < 22.5) return true; // West Ice Lake Village
-      if (Math.hypot(x - 54, z) < 22.5) return true; // East Fairground Village
-      if (Math.hypot(x, z + 54) < 22.5) return true; // North Santa Workshop Village
+      if (Math.hypot(x + 54, z) < 22.5) return true;  // West Ice Lake Village
+      if (Math.hypot(x - 54, z) < 22.5) return true;  // East Fairground Village
+      if (Math.hypot(x, z + 54) < 22.5) return true;  // North Santa Workshop Village
+      if (Math.hypot(x + 42, z + 42) < 21.0) return true; // NW Crystal Ice Castle
+      if (Math.hypot(x - 42, z + 42) < 22.0) return true; // NE Alpine Ski Resort
+      if (Math.hypot(x + 40, z - 40) < 21.0) return true; // SW Windmill & Reindeer Ranch
+      if (Math.hypot(x - 40, z - 40) < 21.0) return true; // SE Gingerbread & Carousel
       if (Math.abs(x) < 16.0 && z > 35.0) return true; // South Archway Boulevard
       return false;
     };
@@ -3131,6 +3880,10 @@ class ChristmasCity3D {
   getCurrentZoneName() {
     const p = this.camera.position;
     if (p.y > 58) return "🦅 Đỉnh Trời (Toàn Thung Lũng)";
+    if (Math.hypot(p.x + 42, p.z + 42) < 20) return "🏰 Lâu Đài Băng Pha Lê";
+    if (Math.hypot(p.x - 42, p.z + 42) < 21) return "⛷ Đồi Trượt Tuyết & Cáp Treo";
+    if (Math.hypot(p.x + 40, p.z - 40) < 20) return "🦌 Cối Xay Gió & Trại Tuần Lộc";
+    if (Math.hypot(p.x - 40, p.z - 40) < 20) return "🎠 Làng Bánh Gừng & Ngựa Gỗ";
     if (Math.hypot(p.x + 54, p.z) < 22) return "⛸ Làng Hồ Băng & Cầu Gỗ";
     if (Math.hypot(p.x - 54, p.z) < 22) return "🎡 Khu Hội Chợ & Vòng Quay";
     if (Math.hypot(p.x, p.z + 54) < 22) return "🚂 Làng Xưởng Santa & Ga Tàu";
@@ -3384,14 +4137,18 @@ class ChristmasCity3D {
     }
 
     const presets = {
-      overview:   { pos: new THREE.Vector3(6.0, 36.0, 106.0),   target: new THREE.Vector3(2.0, 4.0, 2.0) },
-      godview:    { pos: new THREE.Vector3(0.0, 118.0, 24.0),   target: new THREE.Vector3(0.0, 0.0, -2.0) },
-      archway:    { pos: new THREE.Vector3(0.0, 5.4, 62.5),     target: new THREE.Vector3(0.0, 5.0, 34.0) },
-      plaza:      { pos: new THREE.Vector3(-11.5, 7.0, 21.0),   target: new THREE.Vector3(0.5, 4.5, 0.0) },
-      icelake:    { pos: new THREE.Vector3(-34.0, 11.5, 22.0),  target: new THREE.Vector3(-54.0, 2.2, 0.0) },
-      fairground: { pos: new THREE.Vector3(29.0, 13.5, 25.0),   target: new THREE.Vector3(56.0, 6.2, -1.5) },
-      workshop:   { pos: new THREE.Vector3(14.0, 12.5, -26.0),  target: new THREE.Vector3(0.0, 4.0, -56.0) },
-      cathedral:  { pos: new THREE.Vector3(4.0, 8.5, 6.5),      target: new THREE.Vector3(21.5, 6.0, -11.5) }
+      overview:    { pos: new THREE.Vector3(6.0, 38.0, 110.0),   target: new THREE.Vector3(2.0, 4.0, 2.0) },
+      godview:     { pos: new THREE.Vector3(0.0, 126.0, 22.0),   target: new THREE.Vector3(0.0, 0.0, -2.0) },
+      archway:     { pos: new THREE.Vector3(0.0, 5.4, 62.5),     target: new THREE.Vector3(0.0, 5.0, 34.0) },
+      plaza:       { pos: new THREE.Vector3(-11.5, 7.0, 21.0),   target: new THREE.Vector3(0.5, 4.5, 0.0) },
+      icelake:     { pos: new THREE.Vector3(-34.0, 11.5, 22.0),  target: new THREE.Vector3(-54.0, 2.2, 0.0) },
+      fairground:  { pos: new THREE.Vector3(29.0, 13.5, 25.0),   target: new THREE.Vector3(56.0, 6.2, -1.5) },
+      workshop:    { pos: new THREE.Vector3(14.0, 12.5, -26.0),  target: new THREE.Vector3(0.0, 4.0, -56.0) },
+      icecastle:   { pos: new THREE.Vector3(-18.0, 14.5, -18.0), target: new THREE.Vector3(-42.0, 5.5, -42.0) },
+      skislope:    { pos: new THREE.Vector3(19.0, 15.5, -17.0),  target: new THREE.Vector3(42.0, 6.0, -42.0) },
+      windmill:    { pos: new THREE.Vector3(-17.0, 12.5, 58.0),  target: new THREE.Vector3(-40.0, 4.8, 40.0) },
+      gingerbread: { pos: new THREE.Vector3(18.0, 11.5, 58.0),   target: new THREE.Vector3(40.0, 3.8, 40.0) },
+      cathedral:   { pos: new THREE.Vector3(4.0, 8.5, 6.5),      target: new THREE.Vector3(21.5, 6.0, -11.5) }
     };
     const p = presets[presetName] || presets.overview;
 
@@ -3481,6 +4238,7 @@ class ChristmasCity3D {
     this.updateSmoke();
     this.updatePolarExpress(dt);
     this.updateSantaSleigh();
+    this.updateNewScenes(dt);
 
     // Rotate Ferris Wheel smoothly while keeping all 12 passenger gondolas perfectly upright!
     if (this.ferrisWheel) {

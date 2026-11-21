@@ -95,13 +95,22 @@
     /* Bottom Floating Glass Dock */
     .bottom-dock {
       position: fixed;
-      bottom: 22px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 7px 10px;
-      gap: 4px;
-      max-width: calc(100vw - 24px);
+      padding: 6px 8px;
+      gap: 2px;
+      max-width: calc(100vw - 20px);
       overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .bottom-dock::-webkit-scrollbar {
+      display: none;
+    }
+    .bottom-dock .g-btn {
+      font-size: 0.73rem;
+      padding: 6px 9px;
+      gap: 4px;
     }
 
     .g-btn {
@@ -312,6 +321,8 @@
         <span class="eq"><span></span><span></span><span></span></span>
       </button>
       <div class="g-divider"></div>
+      <button class="g-btn" id="btn-fireworks" title="Bắn 1 loạt pháo hoa rực sáng bầu trời Giáng sinh">🎆 Pháo Hoa</button>
+      <div class="g-divider"></div>
       <button class="g-btn" id="btn-open-wish" title="Đổi dòng chữ trên cổng chào 3D">💌 Sửa Cổng Chào</button>
     </div>
 
@@ -329,6 +340,10 @@
       <button class="g-btn cam-preset" data-preset="icelake">⛸ Hồ Băng</button>
       <button class="g-btn cam-preset" data-preset="fairground">🎡 Hội Chợ</button>
       <button class="g-btn cam-preset" data-preset="workshop">🚂 Xưởng Santa</button>
+      <button class="g-btn cam-preset" data-preset="icecastle">🏰 Lâu Đài Băng</button>
+      <button class="g-btn cam-preset" data-preset="skislope">⛷ Trượt Tuyết</button>
+      <button class="g-btn cam-preset" data-preset="windmill">🦌 Cối Xay Gió</button>
+      <button class="g-btn cam-preset" data-preset="gingerbread">🎠 Bánh Gừng</button>
       <button class="g-btn cam-preset" data-preset="cathedral">⛪ Nhà Thờ</button>
       <button class="g-btn walk-btn cam-preset" data-preset="walkthrough" title="Bay mượt xuyên thung lũng qua cả 5 ngôi làng">🚶 Đi Dạo</button>
 
@@ -490,6 +505,10 @@
         snowEnabled = !snowEnabled;
         cityApp.snowPoints.visible = snowEnabled;
         btnSnow.classList.toggle("active", snowEnabled);
+      });
+
+      document.getElementById("btn-fireworks").addEventListener("click", () => {
+        cityApp.launchFireworkSalvo(4);
       });
 
       document.getElementById("btn-snapshot").addEventListener("click", () => {
