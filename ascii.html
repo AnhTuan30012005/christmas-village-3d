@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3D ASCII Christmas Tree</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app-container">
+    
+    <!-- Top Navigation & Control Bar -->
+    <header id="top-bar">
+      <div class="brand-section">
+        <span class="brand-icon">🎄</span>
+        <span class="brand-title">3D ASCII CHRISTMAS TREE <span style="color: #8b949e; font-weight: 400;">// ENGINE</span></span>
+        <span class="brand-badge">60 FPS</span>
+      </div>
+
+      <div class="header-actions">
+        <!-- Audio Control -->
+        <div class="audio-pill" id="audio-pill" title="Bật/Tắt nhạc Giáng sinh">
+          <button class="audio-btn" id="btn-audio">▶ Play Sound</button>
+          <div class="equalizer" id="equalizer">
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+          </div>
+        </div>
+
+        <!-- Palette Theme Selector -->
+        <select id="theme-select" class="btn" title="Chọn bảng màu cây thông">
+          <option value="classic">🌲 Classic Noel (Xanh & Vàng)</option>
+          <option value="cyberpunk">⚡ Cyberpunk 2077 (Neon Cyan/Hồng)</option>
+          <option value="arctic">❄ Arctic Ice (Băng Tuyết Xanh/Bạc)</option>
+          <option value="golden">✨ Golden Glamour (Hoàng Kim)</option>
+        </select>
+
+        <!-- Custom Greeting Action -->
+        <button class="btn btn-festive" id="btn-open-wish">💌 Lời Chúc</button>
+        <!-- Rebuild Animation -->
+        <button class="btn btn-primary" id="btn-rebuild">↺ Dựng Lại</button>
+        <!-- Link to Cinematic 3D Voxel City -->
+        <a href="index.html" class="btn btn-primary" style="text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;" title="Mở Thành Phố 3D Voxel Chuẩn Ảnh Mẫu">🏰 Phố 3D Live</a>
+      </div>
+    </header>
+
+    <!-- Master Fullscreen Workspace (Đã loại bỏ hoàn toàn phần code vướng) -->
+    <main id="workspace" class="crt-effect">
+      
+      <!-- 3D Tree Viewport Fullscreen -->
+      <section id="tree-container">
+        <canvas id="ascii-canvas"></canvas>
+
+        <!-- Live Telemetry HUD -->
+        <div class="hud-layer">
+          <div class="hud-top-right" id="hud-time">t 00.00s</div>
+          
+          <div class="hud-bottom-left">
+            <div class="hud-tag">@999.2006.01.19 · 2026</div>
+            <div>rotation <span id="hud-rot" class="hud-stat-val">000.00°</span> &nbsp;&nbsp;&nbsp;&nbsp; lights <span id="hud-lights" class="hud-stat-val">0</span></div>
+            <div>letters <span id="hud-letters" class="hud-stat-val">0</span></div>
+          </div>
+
+          <div class="hud-bottom-right">
+            running · <span id="hud-fps" class="hud-fps">60 fps</span>
+          </div>
+        </div>
+
+        <!-- Floating Interactive Dock -->
+        <div class="floating-dock">
+          <button class="dock-btn" id="btn-cam-photo" title="Đặt lại góc nhìn chuẩn như ảnh mẫu">
+            <span>📷</span> Góc Chuẩn Phim
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn active" id="btn-autorotate" title="Tự động xoay 3D">
+            <span>🔄</span> Xoay 3D
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn active" id="btn-city" title="Bật/Tắt thành phố tuyết xung quanh">
+            <span>🏰</span> Phố Tuyết: Bật
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn" id="btn-complete" title="Hiển thị ngay cây thông đã trang trí đầy đủ">
+            <span>⚡</span> Cây Đầy Đủ
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn" id="btn-snow" title="Tuyết rơi">
+            <span>❄️</span> Tuyết: <span id="snow-state">Bật</span>
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn active" id="btn-crt" title="Bộ lọc màn hình quét Retro CRT">
+            <span>📺</span> CRT Bloom
+          </button>
+          <div class="dock-divider"></div>
+          <button class="dock-btn" id="btn-snapshot" title="Chụp ảnh lưu PNG">
+            <span>📸</span> Chụp PNG
+          </button>
+        </div>
+
+        <!-- Festive Wish Banner Overlay -->
+        <div id="wish-overlay">
+          <div class="wish-text" id="display-wish-title">🎄 MERRY CHRISTMAS 2026 🎄</div>
+          <div class="wish-sub" id="display-wish-sub">Chúc bạn một mùa Giáng Sinh an lành & hạnh phúc!</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Custom Wish Modal Dialog -->
+    <div class="modal-backdrop" id="wish-modal">
+      <div class="modal-card">
+        <h3 class="modal-title">💌 Tùy Chỉnh Lời Chúc Giáng Sinh</h3>
+        <div>
+          <label style="font-size: 0.8rem; color: #8b949e; display: block; margin-bottom: 6px;">Tiêu đề lời chúc:</label>
+          <input type="text" id="input-wish-title" class="modal-input" value="MERRY CHRISTMAS 2026">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; color: #8b949e; display: block; margin-bottom: 6px;">Thông điệp gửi gắm:</label>
+          <input type="text" id="input-wish-sub" class="modal-input" value="Chúc bạn một mùa Giáng Sinh ấm áp, bình an và nhiều may mắn!">
+        </div>
+        <div class="modal-footer">
+          <button class="btn" id="btn-close-modal">Hủy</button>
+          <button class="btn btn-primary" id="btn-save-wish">Áp Dụng Lên Cây Thông</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Background Music Audio Element -->
+    <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+
+  </div>
+
+  <script src="tree3d.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Initialize 3D Tree Engine
+      const canvas = document.getElementById("ascii-canvas");
+      const hudElements = {
+        time: document.getElementById("hud-time"),
+        rotation: document.getElementById("hud-rot"),
+        lights: document.getElementById("hud-lights"),
+        letters: document.getElementById("hud-letters"),
+        fps: document.getElementById("hud-fps")
+      };
+      const treeEngine = new Tree3DEngine(canvas, hudElements);
+
+      // 2. Main Animation Loop
+      function animate(now) {
+        treeEngine.render(now);
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+
+      // 3. Audio Player Setup (Authentic video sound with Web Audio synthesizer fallback)
+      const audioEl = document.getElementById("bgMusic");
+      const btnAudio = document.getElementById("btn-audio");
+      const audioPill = document.getElementById("audio-pill");
+      let isPlaying = false;
+      let synthAudioCtx = null;
+      let synthInterval = null;
+
+      function startSynthChristmasMusic() {
+        if (synthAudioCtx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        synthAudioCtx = new AudioContext();
+
+        const notes = [
+          659.25, 659.25, 659.25,
+          659.25, 659.25, 659.25,
+          659.25, 783.99, 523.25, 587.33, 659.25,
+          698.46, 698.46, 698.46, 698.46,
+          698.46, 659.25, 659.25,
+          659.25, 587.33, 587.33, 659.25, 587.33, 783.99
+        ];
+        const durations = [
+          0.3, 0.3, 0.6,
+          0.3, 0.3, 0.6,
+          0.3, 0.3, 0.4, 0.2, 0.8,
+          0.3, 0.3, 0.4, 0.2,
+          0.3, 0.3, 0.6,
+          0.3, 0.3, 0.3, 0.3, 0.6, 0.6
+        ];
+        let noteIdx = 0;
+
+        function playNextNote() {
+          if (!synthAudioCtx || synthAudioCtx.state === "closed") return;
+          const freq = notes[noteIdx];
+          const dur = durations[noteIdx];
+
+          const osc = synthAudioCtx.createOscillator();
+          const gain = synthAudioCtx.createGain();
+
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, synthAudioCtx.currentTime);
+
+          gain.gain.setValueAtTime(0.08, synthAudioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, synthAudioCtx.currentTime + dur * 0.9);
+
+          osc.connect(gain);
+          gain.connect(synthAudioCtx.destination);
+
+          osc.start();
+          osc.stop(synthAudioCtx.currentTime + dur);
+
+          noteIdx = (noteIdx + 1) % notes.length;
+          synthInterval = setTimeout(playNextNote, dur * 1000);
+        }
+        playNextNote();
+      }
+
+      function stopSynthMusic() {
+        if (synthInterval) clearTimeout(synthInterval);
+        if (synthAudioCtx) {
+          synthAudioCtx.close();
+          synthAudioCtx = null;
+        }
+      }
+
+      btnAudio.addEventListener("click", () => {
+        if (!isPlaying) {
+          audioEl.play().then(() => {
+            isPlaying = true;
+            audioPill.classList.add("audio-playing");
+            btnAudio.textContent = "⏸ Pause Sound";
+          }).catch(err => {
+            console.warn("Direct mp3 autoplay blocked, falling back to Web Audio synth:", err);
+            startSynthChristmasMusic();
+            isPlaying = true;
+            audioPill.classList.add("audio-playing");
+            btnAudio.textContent = "⏸ Pause Sound";
+          });
+        } else {
+          audioEl.pause();
+          stopSynthMusic();
+          isPlaying = false;
+          audioPill.classList.remove("audio-playing");
+          btnAudio.textContent = "▶ Play Sound";
+        }
+      });
+
+      // 4. Dock and Action Controls
+      // Rebuild animation
+      document.getElementById("btn-rebuild").addEventListener("click", () => {
+        treeEngine.replayTimeline();
+      });
+
+      // Camera reset to photo angle
+      document.getElementById("btn-cam-photo").addEventListener("click", () => {
+        treeEngine.resetToPhotoAngle();
+      });
+
+      // Skip to fully grown
+      document.getElementById("btn-complete").addEventListener("click", () => {
+        treeEngine.setFullyGrown();
+      });
+
+      // Theme selector
+      document.getElementById("theme-select").addEventListener("change", (e) => {
+        treeEngine.setTheme(e.target.value);
+      });
+
+      // City toggle
+      const btnCity = document.getElementById("btn-city");
+      btnCity.addEventListener("click", () => {
+        treeEngine.showCity = !treeEngine.showCity;
+        btnCity.classList.toggle("active", treeEngine.showCity);
+        btnCity.querySelector("span:last-child").textContent = treeEngine.showCity ? " Phố Tuyết: Bật" : " Phố Tuyết: Tắt";
+      });
+
+      // Auto-rotate toggle
+      const btnAutoRot = document.getElementById("btn-autorotate");
+      btnAutoRot.addEventListener("click", () => {
+        treeEngine.autoRotate = !treeEngine.autoRotate;
+        btnAutoRot.classList.toggle("active", treeEngine.autoRotate);
+      });
+
+      // Snow toggle
+      const btnSnow = document.getElementById("btn-snow");
+      const snowState = document.getElementById("snow-state");
+      let snowEnabled = true;
+      btnSnow.addEventListener("click", () => {
+        snowEnabled = !snowEnabled;
+        treeEngine.snowParticles.forEach(p => p.speedY = snowEnabled ? (0.15 + Math.random() * 0.25) : 0);
+        snowState.textContent = snowEnabled ? "Bật" : "Tắt";
+        btnSnow.classList.toggle("active", snowEnabled);
+      });
+
+      // CRT Scanline filter toggle
+      const workspace = document.getElementById("workspace");
+      const btnCrt = document.getElementById("btn-crt");
+      btnCrt.addEventListener("click", () => {
+        workspace.classList.toggle("crt-effect");
+        btnCrt.classList.toggle("active", workspace.classList.contains("crt-effect"));
+      });
+
+      // PNG Snapshot
+      document.getElementById("btn-snapshot").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = `3d-ascii-christmas-tree-${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+
+      // Wish Modal
+      const modal = document.getElementById("wish-modal");
+      const btnOpenWish = document.getElementById("btn-open-wish");
+      const btnCloseModal = document.getElementById("btn-close-modal");
+      const btnSaveWish = document.getElementById("btn-save-wish");
+      const inputTitle = document.getElementById("input-wish-title");
+      const inputSub = document.getElementById("input-wish-sub");
+      const displayTitle = document.getElementById("display-wish-title");
+      const displaySub = document.getElementById("display-wish-sub");
+
+      btnOpenWish.addEventListener("click", () => modal.classList.add("open"));
+      btnCloseModal.addEventListener("click", () => modal.classList.remove("open"));
+      btnSaveWish.addEventListener("click", () => {
+        displayTitle.textContent = `🎄 ${inputTitle.value.trim()} 🎄`;
+        displaySub.textContent = inputSub.value.trim();
+        modal.classList.remove("open");
+      });
+    });
+  </script>
+</body>
+</html>

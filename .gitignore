@@ -1,0 +1,5 @@
+# Exclude temporary verification previews and raw source video
+*_preview.png
+SaveInta.com_*.mp4
+.DS_Store
+Thumbs.db
