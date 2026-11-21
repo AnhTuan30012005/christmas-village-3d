@@ -3,19 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>3D ASCII Christmas Tree — Pure Terminal Edition</title>
+  <title>3D ASCII Christmas Tree — Radiant Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #05070c;
-      --fg: #d6e2f0;
-      --muted: rgba(164, 182, 206, 0.72);
-      --accent: #f87171;
-      --gold: #fbbf24;
-      --glass: rgba(9, 13, 22, 0.72);
-      --border: rgba(255, 255, 255, 0.12);
+      --bg: #03050a;
+      --fg: #e2ecf8;
+      --muted: rgba(176, 196, 222, 0.70);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
     }
@@ -43,7 +39,7 @@
       inset: 0;
       width: 100vw;
       height: 100dvh;
-      background: radial-gradient(circle at 50% 42%, #0b101d 0%, #05070c 68%, #020306 100%);
+      background: radial-gradient(circle at 50% 44%, #0b1224 0%, #04070f 62%, #020307 100%);
       overflow: hidden;
     }
 
@@ -57,51 +53,51 @@
       cursor: grabbing;
     }
 
-    /* Subtle optional CRT scanline texture */
-    #stage.crt::after {
+    /* Ultra-subtle CRT scanline sheen */
+    #stage::after {
       content: "";
       position: fixed;
       inset: 0;
       pointer-events: none;
       background: repeating-linear-gradient(
         0deg,
-        rgba(0, 0, 0, 0.14) 0px,
-        rgba(0, 0, 0, 0.14) 1px,
+        rgba(0, 0, 0, 0.11) 0px,
+        rgba(0, 0, 0, 0.11) 1px,
         transparent 1px,
         transparent 3px
       );
-      opacity: 0.45;
+      opacity: 0.35;
       z-index: 4;
     }
 
-    /* Minimal Authentic Terminal Telemetry HUD (Matches original video style, zero code panel!) */
+    /* Clean Terminal Telemetry HUD */
     .hud {
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 10;
-      font-size: clamp(10.5px, 1.35vw, 13.5px);
+      font-size: clamp(10px, 1.25vw, 13px);
       line-height: 1.55;
       letter-spacing: 0.02em;
     }
 
     .hud-time {
       position: fixed;
-      top: calc(14px + var(--safe-top));
+      top: calc(16px + var(--safe-top));
       right: clamp(14px, 2.6vw, 28px);
-      color: #ff6b81;
+      color: #ff758f;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 12px rgba(255, 107, 129, 0.45);
+      text-shadow: 0 0 14px rgba(255, 117, 143, 0.55);
     }
 
     .hud-bottom-left {
       position: fixed;
       left: clamp(14px, 2.6vw, 28px);
-      bottom: calc(74px + var(--safe-bottom));
+      bottom: calc(16px + var(--safe-bottom));
       color: var(--muted);
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.92);
     }
     .hud-bottom-left .tag {
       color: #93c5fd;
@@ -109,107 +105,76 @@
       margin-bottom: 2px;
     }
     .hud-bottom-left .val {
-      color: #f8fafc;
+      color: #fffbeb;
       font-weight: 600;
     }
 
     .hud-bottom-right {
       position: fixed;
       right: clamp(14px, 2.6vw, 28px);
-      bottom: calc(74px + var(--safe-bottom));
+      bottom: calc(16px + var(--safe-bottom));
       color: var(--muted);
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.92);
     }
     .hud-bottom-right .fps {
       color: #4ade80;
       font-weight: 600;
     }
 
-    /* Responsive Floating Bottom Glass Control Bar */
-    .dock-wrap {
+    /* Minimal Top-Left Ghost Controls (Only Music + Replay — zero visual clutter!) */
+    .mini-controls {
       position: fixed;
-      left: 50%;
-      bottom: calc(16px + var(--safe-bottom));
-      transform: translateX(-50%);
+      top: calc(14px + var(--safe-top));
+      left: clamp(12px, 2.2vw, 24px);
       z-index: 20;
-      max-width: calc(100vw - 20px);
-      transition: opacity 0.45s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.5s ease;
     }
-    .dock-wrap.idle {
-      opacity: 0.36;
+    .mini-controls.idle {
+      opacity: 0.32;
     }
-    .dock-wrap:hover,
-    .dock-wrap:focus-within {
+    .mini-controls:hover,
+    .mini-controls:focus-within {
       opacity: 1 !important;
     }
 
-    .dock {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 8px;
-      border-radius: 999px;
-      background: var(--glass);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
-      overflow-x: auto;
-      max-width: calc(100vw - 20px);
-      scrollbar-width: none;
-    }
-    .dock::-webkit-scrollbar {
-      display: none;
-    }
-
-    .btn {
+    .ghost-btn {
       appearance: none;
-      border: 1px solid transparent;
-      background: transparent;
-      color: rgba(226, 232, 240, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(8, 12, 22, 0.58);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(241, 245, 249, 0.88);
       font-family: inherit;
-      font-size: clamp(11px, 1.25vw, 12.5px);
+      font-size: clamp(11px, 1.2vw, 12px);
       font-weight: 500;
-      padding: 7px 11px;
+      padding: 6px 11px;
       border-radius: 999px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      gap: 6px;
+      transition: all 0.2s ease;
     }
-    .btn:hover {
-      background: rgba(255, 255, 255, 0.10);
-      color: #ffffff;
+    .ghost-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(253, 224, 71, 0.45);
+      color: #fffbeb;
     }
-    .btn.active {
+    .ghost-btn.playing {
+      border-color: rgba(251, 191, 36, 0.52);
       background: rgba(251, 191, 36, 0.16);
-      border-color: rgba(251, 191, 36, 0.44);
       color: #fde68a;
     }
-    .btn.primary {
-      background: linear-gradient(135deg, rgba(22, 163, 74, 0.78), rgba(16, 185, 129, 0.78));
-      border-color: rgba(134, 239, 172, 0.45);
-      color: #f0fdf4;
-      font-weight: 600;
-    }
 
-    .sep {
-      width: 1px;
-      height: 16px;
-      background: rgba(255, 255, 255, 0.14);
-      margin: 0 2px;
-      flex-shrink: 0;
-    }
-
-    /* Audio Equalizer Bars */
     .eq {
       display: inline-flex;
       align-items: flex-end;
       gap: 2px;
-      height: 11px;
+      height: 10px;
     }
     .eq span {
       width: 2px;
@@ -218,45 +183,41 @@
       border-radius: 2px;
     }
     .playing .eq span {
-      animation: eq 0.7s ease-in-out infinite alternate;
+      animation: eq 0.68s ease-in-out infinite alternate;
     }
     .playing .eq span:nth-child(2) { animation-delay: 0.18s; }
     .playing .eq span:nth-child(3) { animation-delay: 0.36s; }
     @keyframes eq {
       0% { height: 3px; }
-      100% { height: 11px; }
+      100% { height: 10px; }
     }
 
-    /* Mobile & Compact Portrait Layout */
-    @media (max-width: 640px) {
-      .hud-bottom-left {
-        bottom: calc(68px + var(--safe-bottom));
-        font-size: 10.5px;
-      }
+    @media (max-width: 600px) {
+      .hud-bottom-left,
       .hud-bottom-right {
-        bottom: calc(68px + var(--safe-bottom));
+        font-size: 10px;
+      }
+      .ghost-btn {
+        padding: 5px 9px;
         font-size: 10.5px;
-      }
-      .dock {
-        gap: 2px;
-        padding: 5px 6px;
-      }
-      .btn {
-        padding: 6px 7.5px;
-        font-size: 10.5px;
-        gap: 3px;
-      }
-      .btn .hide-sm {
-        display: none;
       }
     }
   </style>
 </head>
 <body>
-  <div id="stage" class="crt">
+  <div id="stage">
     <canvas id="ascii-canvas"></canvas>
 
-    <!-- Pure Terminal Telemetry Overlay (Zero Code Panel) -->
+    <!-- Only 2 ultra-minimal ghost controls: Music & Replay -->
+    <div class="mini-controls" id="mini-controls">
+      <button class="ghost-btn" id="btn-audio" title="Bật/Tắt nhạc Giáng sinh">
+        <span id="audio-lbl">▶ Nhạc</span>
+        <span class="eq"><span></span><span></span><span></span></span>
+      </button>
+      <button class="ghost-btn" id="btn-replay" title="Xem lại từ đầu">↺</button>
+    </div>
+
+    <!-- Clean Terminal Telemetry -->
     <div class="hud">
       <div class="hud-time" id="hud-time">t 00.00s</div>
 
@@ -270,23 +231,6 @@
         running · <span class="fps" id="hud-fps">60 fps</span>
       </div>
     </div>
-
-    <!-- Minimal Responsive Control Dock -->
-    <div class="dock-wrap" id="dock-wrap">
-      <div class="dock">
-        <button class="btn primary" id="btn-replay" title="Chạy lại hiệu ứng mọc cây từ 0s">↺ <span class="hide-sm">Dựng Lại</span></button>
-        <button class="btn" id="btn-full" title="Hiển thị ngay cây hoàn chỉnh">⚡ <span class="hide-sm">Đầy Đủ</span></button>
-        <div class="sep"></div>
-        <button class="btn" id="btn-audio" title="Bật/Tắt nhạc Giáng sinh">
-          <span id="audio-lbl">▶ Nhạc</span>
-          <span class="eq"><span></span><span></span><span></span></span>
-        </button>
-        <button class="btn" id="btn-theme" title="Đổi bảng màu (Classic / Neon / Băng / Hoàng Kim)">🎨 <span id="theme-lbl">Classic</span></button>
-        <button class="btn active" id="btn-spin" title="Tự xoay 360°">🔄 <span class="hide-sm">Xoay</span></button>
-        <button class="btn active" id="btn-crt" title="Bật/Tắt đường quét CRT">📺 <span class="hide-sm">CRT</span></button>
-        <button class="btn" id="btn-snap" title="Lưu ảnh PNG">📸 <span class="hide-sm">Chụp</span></button>
-      </div>
-    </div>
   </div>
 
   <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
@@ -297,7 +241,6 @@
 
     const TAU = Math.PI * 2;
 
-    // Element types
     const T_NEEDLE  = 0;
     const T_SNOWCAP = 1;
     const T_TRUNK   = 2;
@@ -311,107 +254,78 @@
 
     const SHADE_RAMP = ".:-=+*x%#@";
 
-    const THEMES = [
-      {
-        key: "classic",
-        label: "Classic",
-        foliage: [[34, 136, 56], [48, 178, 76], [74, 214, 98], [26, 108, 44]],
-        snow: [242, 248, 255],
-        trunk: [156, 98, 52],
-        garland: [255, 220, 56],
-        star: [255, 236, 102],
-        balls: [[238, 34, 48], [252, 204, 38], [228, 28, 46], [255, 172, 34]],
-        lights: [[255, 66, 80], [255, 220, 52], [68, 230, 255], [84, 232, 118], [255, 134, 206]],
-        ground: [172, 188, 212],
-        sky: [228, 240, 255]
-      },
-      {
-        key: "arctic",
-        label: "Băng Tuyết",
-        foliage: [[36, 98, 136], [62, 146, 188], [116, 194, 228], [26, 68, 102]],
-        snow: [250, 253, 255],
-        trunk: [90, 108, 132],
-        garland: [204, 240, 255],
-        star: [236, 248, 255],
-        balls: [[96, 188, 255], [240, 248, 255], [148, 168, 255], [56, 218, 245]],
-        lights: [[128, 224, 255], [255, 255, 255], [165, 188, 255], [72, 198, 248], [220, 246, 255]],
-        ground: [108, 138, 174],
-        sky: [235, 248, 255]
-      },
-      {
-        key: "cyber",
-        label: "Neon",
-        foliage: [[12, 92, 96], [0, 174, 162], [18, 224, 198], [16, 54, 82]],
-        snow: [255, 126, 218],
-        trunk: [88, 44, 122],
-        garland: [0, 255, 242],
-        star: [255, 56, 156],
-        balls: [[255, 36, 140], [0, 245, 230], [255, 220, 48], [186, 76, 255]],
-        lights: [[255, 42, 146], [0, 255, 240], [255, 232, 64], [190, 72, 255], [80, 255, 168]],
-        ground: [96, 74, 142],
-        sky: [170, 245, 255]
-      },
-      {
-        key: "gold",
-        label: "Hoàng Kim",
-        foliage: [[86, 66, 22], [142, 108, 34], [196, 152, 48], [62, 48, 18]],
-        snow: [255, 244, 214],
-        trunk: [110, 72, 34],
-        garland: [255, 238, 145],
-        star: [255, 250, 190],
-        balls: [[245, 196, 42], [226, 66, 46], [255, 232, 130], [235, 128, 36]],
-        lights: [[255, 224, 82], [255, 164, 52], [255, 246, 175], [255, 92, 58], [255, 206, 110]],
-        ground: [132, 114, 86],
-        sky: [255, 245, 216]
-      }
-    ];
+    const PALETTE = {
+      foliage: [
+        [28, 138, 62],
+        [46, 188, 86],
+        [78, 226, 114],
+        [20, 108, 48]
+      ],
+      snow: [246, 251, 255],
+      trunk: [164, 102, 54],
+      garlandA: [255, 224, 72],
+      garlandB: [255, 245, 195],
+      star: [255, 242, 128],
+      balls: [
+        [255, 36, 58],   // Ruby crimson
+        [255, 206, 44],  // Liquid gold
+        [244, 42, 92],   // Rose ruby
+        [56, 214, 255]   // Diamond ice-blue
+      ],
+      lights: [
+        [255, 226, 76],  // Warm champagne gold
+        [255, 68, 92],   // Festive ruby
+        [72, 234, 255],  // Crystal cyan
+        [96, 246, 136],  // Emerald sparkle
+        [255, 152, 224], // Pearl rose
+        [255, 174, 48]   // Honey amber
+      ],
+      ground: [176, 196, 224],
+      sky: [232, 244, 255]
+    };
 
-    class PureAsciiTreeApp {
+    class RadiantAsciiTree {
       constructor(canvas, hud) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d", { alpha: false });
         this.hud = hud;
 
+        // Offscreen Bloom Layer for Real Optical Holiday Glow!
+        this.bloomCanvas = document.createElement("canvas");
+        this.bCtx = this.bloomCanvas.getContext("2d");
+
         this.dpr = Math.min(window.devicePixelRatio || 1, 2);
         this.width = window.innerWidth;
         this.height = window.innerHeight;
 
-        // Monospace Terminal Grid Dimensions (computed responsively)
         this.cols = 120;
         this.rows = 60;
-        this.cellW = 8;
-        this.cellH = 14;
-        this.fontSize = 12;
+        this.cellW = 6;
+        this.cellH = 10;
+        this.fontSize = 10;
 
-        // Camera & Orbit State
         this.yaw = 0.0;
-        this.pitch = 0.16;
-        this.camDist = 3.75;
+        this.pitch = 0.15;
+        this.camDist = 3.55;
         this.autoRotate = true;
-        this.rotSpeed = 0.34; // rad/s matching video pace
+        this.rotSpeed = 0.34;
 
-        // Interactive Drag / Touch Pinch State
         this.dragging = false;
         this.lastPtr = { x: 0, y: 0 };
         this.pinchDist = 0;
 
-        // Timeline (Starts at t = 0.00s growing smoothly like the video!)
         this.timeline = 0.0;
         this.lastNow = performance.now();
         this.fps = 60;
         this.fpsAcc = 0;
         this.fpsTimer = performance.now();
 
-        this.themeIdx = 0;
-        this.theme = THEMES[0];
-
-        // Model & Sky Buffers
         this.points = [];
         this.stars = [];
         this.snow = [];
-        this.totalLights = 0;
+        this.auraDust = [];
+        this.sparkleTargets = [];
 
-        // Z-Buffer Arrays (reallocated on resize only)
         this.zBuf = null;
         this.chBuf = null;
         this.rBuf = null;
@@ -420,15 +334,14 @@
         this.glowBuf = null;
 
         this.buildTreeModel();
-        this.buildSkyAndSnow();
+        this.buildAtmosphere();
         this.resize();
         this.bindInput();
       }
 
-      // Cone envelope matching agac.py silhouette
       envelope(y, Y0, Y1) {
         const f = Math.max(0, Math.min(1, (y - Y0) / (Y1 - Y0)));
-        return 0.035 + 0.88 * Math.pow(1 - f, 1.06);
+        return 0.036 + 0.90 * Math.pow(1 - f, 1.05);
       }
 
       fibSphere(n) {
@@ -446,85 +359,87 @@
       buildTreeModel() {
         this.points = [];
         const Y0 = 0.28;
-        const Y1 = 2.52;
-        const tiers = 24;
+        const Y1 = 2.54;
+        const tiers = 26;
         const tips = [];
 
-        // Deterministic PRNG for consistent rich foliage
-        let seed = 7919;
+        let seed = 9973;
         const rnd = () => {
           seed = (seed * 1664525 + 1013904223) >>> 0;
           return seed / 4294967296;
         };
-        const rndN = () => (rnd() + rnd() + rnd() + rnd() - 2) * 0.65;
+        const rndN = () => (rnd() + rnd() + rnd() + rnd() - 2) * 0.64;
 
-        // 1. Perspective Dotted Ground Grid Plane (wide sparkling silver horizon matching reference video!)
-        const gSpan = 3.55;
+        // 1. Wide Sparkling Silver Horizon Ground Grid
+        const gSpan = 3.75;
         const gStep = 0.082;
         for (let gx = -gSpan; gx <= gSpan; gx += gStep) {
           for (let gz = -gSpan; gz <= gSpan; gz += gStep) {
             const dist = Math.hypot(gx, gz);
             if (dist > gSpan) continue;
-            const shadow = dist < 0.94 ? (0.30 + 0.70 * (dist / 0.94)) : (1.0 - Math.pow(dist / gSpan, 1.7) * 0.62);
+            const shadow = dist < 0.92
+              ? (0.34 + 0.66 * (dist / 0.92))
+              : (1.0 - Math.pow(dist / gSpan, 1.65) * 0.62);
             this.points.push({
               x: gx, y: 0.0, z: gz,
               nx: 0, ny: 1, nz: 0,
               ao: shadow,
+              dist,
               type: T_GROUND,
-              t0: 0.05 + dist * 0.12,
-              glyph: dist < 1.25 ? "=" : (dist < 2.25 ? "-" : ".")
+              t0: 0.04 + dist * 0.11,
+              glyph: dist < 1.25 ? "=" : (dist < 2.35 ? "-" : ".")
             });
           }
         }
 
         // 2. Sturdy Trunk Cylinder
-        for (let ty = 0.0; ty <= 0.62; ty += 0.032) {
-          for (let k = 0; k < 20; k++) {
-            const a = (k / 20) * TAU;
+        for (let ty = 0.0; ty <= 0.64; ty += 0.030) {
+          for (let k = 0; k < 22; k++) {
+            const a = (k / 22) * TAU;
             const tr = 0.105;
             this.points.push({
               x: Math.cos(a) * tr,
               y: ty,
               z: Math.sin(a) * tr,
               nx: Math.cos(a), ny: 0, nz: Math.sin(a),
-              ao: 0.72 + 0.28 * Math.sin(ty * 65 + a * 3),
+              ao: 0.75 + 0.25 * Math.sin(ty * 60 + a * 3),
               type: T_TRUNK,
-              t0: 0.4 + ty * 1.1,
+              t0: 0.35 + ty * 0.95,
               glyph: ["#", "|", "%", "H"][Math.floor(rnd() * 4)]
             });
           }
         }
 
-        // 3. 24 Dense Drooping Pine Branch Tiers (agac.py whorls!)
+        // 3. 26 Ultra-Lush Drooping Emerald Pine Whorls with Frosty Snow Tips
         for (let i = 0; i < tiers; i++) {
           const uTier = i / (tiers - 1);
-          const v = Y0 + 0.04 + (Y1 - Y0 - 0.12) * uTier;
+          const v = Y0 + 0.04 + (Y1 - Y0 - 0.11) * uTier;
           const R = this.envelope(v, Y0, Y1);
-          const nb = Math.floor(7 + 11 * (1 - uTier));
+          const nb = Math.floor(8 + 12 * (1 - uTier));
 
           for (let b = 0; b < nb; b++) {
-            const a = (TAU * b) / nb + i * 0.618034 * TAU + rndN() * 0.07;
-            const L = R * (0.86 + rnd() * 0.20);
-            const count = Math.floor(14 + 34 * (L / 0.85));
+            const a = (TAU * b) / nb + i * 0.618034 * TAU + rndN() * 0.065;
+            const L = R * (0.87 + rnd() * 0.19);
+            const count = Math.floor(15 + 36 * (L / 0.85));
 
             const ca = Math.cos(a), sa = Math.sin(a);
             const sx = -sa, sz = ca;
 
             for (let j = 0; j < count; j++) {
-              const s = Math.pow(rnd(), 0.62);
+              const s = Math.pow(rnd(), 0.60);
               const spread = (0.03 + 0.11 * s) * rndN() * 0.42;
-              const py = v + 0.065 * s * L - 0.21 * Math.pow(s * L, 2) + rndN() * 0.024;
+              const py = v + 0.065 * s * L - 0.205 * Math.pow(s * L, 2) + rndN() * 0.023;
               const px = ca * (s * L) + sx * spread;
               const pz = sa * (s * L) + sz * spread;
 
               const nx = ca * 0.78 + rndN() * 0.12;
-              const ny = 0.52 + rndN() * 0.12;
+              const ny = 0.54 + rndN() * 0.12;
               const nz = sa * 0.78 + rndN() * 0.12;
               const nL = Math.hypot(nx, ny, nz) || 1;
 
-              const ao = 0.34 + 0.66 * Math.pow(s, 1.15);
-              const t0 = 1.2 + 6.2 * uTier + 0.55 * s;
-              const isSnow = s > 0.56 && rnd() < 0.075 * s && ny > 0.35;
+              const ao = 0.42 + 0.58 * Math.pow(s, 1.05);
+              const t0 = 1.0 + 5.6 * uTier + 0.48 * s;
+              const isSnow = s > 0.54 && rnd() < 0.095 * s && ny > 0.34;
 
               this.points.push({
                 x: px, y: py, z: pz,
@@ -534,46 +449,52 @@
                 cIdx: Math.floor(rnd() * 4),
                 t0,
                 glyph: isSnow
-                  ? (rnd() < 0.5 ? "*" : ".")
+                  ? (rnd() < 0.55 ? "*" : "·")
                   : ["%", "*", "#", "+", "x", "=", ":"][Math.floor(rnd() * 7)]
               });
             }
 
-            const tipY = v + 0.065 * L - 0.21 * L * L;
-            tips.push({ x: ca * L * 0.95, y: tipY, z: sa * L * 0.95, nx: ca, nz: sa, uTier });
+            const tipY = v + 0.065 * L - 0.205 * L * L;
+            tips.push({ x: ca * L * 0.96, y: tipY, z: sa * L * 0.96, nx: ca, nz: sa, uTier });
           }
         }
 
-        // 4. Shimmering Golden Tinsel Garland Spiraling up the Tree
-        const gPts = 420;
-        const turns = 4.2;
-        for (let g = 0; g < gPts; g++) {
-          const u = g / gPts;
-          const yg = Y0 + 0.12 + (Y1 - Y0 - 0.32) * u;
-          const ag = TAU * turns * u + 0.6;
-          const swag = -0.055 * Math.abs(Math.sin(ag * 2.5));
-          const rg = this.envelope(yg, Y0, Y1) * 1.03 + 0.015;
-          this.points.push({
-            x: Math.cos(ag) * rg,
-            y: yg + swag,
-            z: Math.sin(ag) * rg,
-            nx: Math.cos(ag), ny: 0.45, nz: Math.sin(ag),
-            ao: 1.0,
-            type: T_GARLAND,
-            t0: 8.2 + u * 2.2,
-            glyph: ["=", "~", "*", "o", "#"][g % 5]
-          });
+        // 4. Double Interwoven Shimmering Golden & Champagne Ribbons (with traveling wave!)
+        const ribbonCount = 2;
+        for (let rIdx = 0; rIdx < ribbonCount; rIdx++) {
+          const gPts = 460;
+          const turns = 4.6;
+          const aOff = rIdx * Math.PI + 0.4;
+          for (let g = 0; g < gPts; g++) {
+            const u = g / gPts;
+            const yg = Y0 + 0.10 + (Y1 - Y0 - 0.28) * u;
+            const ag = TAU * turns * u + aOff;
+            const swag = -0.052 * Math.abs(Math.sin(ag * 2.5));
+            const rg = this.envelope(yg, Y0, Y1) * 1.035 + 0.018;
+            this.points.push({
+              x: Math.cos(ag) * rg,
+              y: yg + swag,
+              z: Math.sin(ag) * rg,
+              nx: Math.cos(ag), ny: 0.45, nz: Math.sin(ag),
+              ao: 1.0,
+              u,
+              cIdx: rIdx,
+              type: T_GARLAND,
+              t0: 6.8 + u * 2.1,
+              glyph: rIdx === 0 ? ["=", "*", "✦", "~", "o"][g % 5] : ["*", "·", "+", "o"][g % 4]
+            });
+          }
         }
 
-        // 5. Lush Spherical 3D Ornaments (Big Red & Gold Globes clearly visible like reference video!)
-        const ballSphere = this.fibSphere(38);
+        // 5. Rich Glossy 3D Jewel Ornaments (Ruby, Liquid Gold, Rose, Diamond Cyan)
+        const ballSphere = this.fibSphere(40);
         let ballIdx = 0;
-        for (let i = 0; i < tips.length; i += 7) {
+        for (let i = 0; i < tips.length; i += 8) {
           const tip = tips[i];
-          if (tip.uTier > 0.88) continue;
-          const rad = tip.uTier < 0.35 ? 0.092 : 0.072;
+          if (tip.uTier > 0.89) continue;
+          const rad = tip.uTier < 0.35 ? 0.095 : 0.074;
           const cIdx = ballIdx % 4;
-          const t0 = 7.6 + tip.uTier * 2.4;
+          const t0 = 6.6 + tip.uTier * 2.2;
           ballIdx++;
           for (let k = 0; k < ballSphere.length; k++) {
             const bp = ballSphere[k];
@@ -582,7 +503,7 @@
               y: tip.y + bp.y * rad,
               z: tip.z + bp.z * rad,
               nx: bp.x, ny: bp.y, nz: bp.z,
-              ao: 0.95,
+              ao: 1.0,
               type: T_BALL,
               cIdx,
               t0,
@@ -591,94 +512,100 @@
           }
         }
 
-        // 6. Exactly 170 Twinkling Multi-Color Fairy Lights (matching video telemetry `lights 170`!)
+        // 6. 220 Sparkling Jewel Fairy Lights (with optical cross-flare sparkles!)
         let lightCount = 0;
-        const stride = Math.max(1, Math.floor(tips.length / 170));
-        for (let i = 0; i < tips.length && lightCount < 170; i += stride) {
+        const stride = Math.max(1, Math.floor(tips.length / 220));
+        for (let i = 0; i < tips.length && lightCount < 220; i += stride) {
           const tip = tips[i];
           const lIdx = lightCount++;
-          this.points.push({
-            x: tip.x + (rnd() - 0.5) * 0.05,
-            y: tip.y + (rnd() - 0.5) * 0.05,
-            z: tip.z + (rnd() - 0.5) * 0.05,
-            nx: tip.nx, ny: 0.4, nz: tip.nz,
+          const pt = {
+            x: tip.x + (rnd() - 0.5) * 0.055,
+            y: tip.y + (rnd() - 0.5) * 0.055,
+            z: tip.z + (rnd() - 0.5) * 0.055,
+            nx: tip.nx, ny: 0.45, nz: tip.nz,
             ao: 1.0,
             type: T_LIGHT,
-            cIdx: lIdx % 5,
+            cIdx: lIdx % PALETTE.lights.length,
             phase: rnd() * TAU,
-            t0: 8.0 + (lIdx / 170) * 4.2,
-            glyph: ["@", "*", "o", "+"][lIdx % 4]
-          });
+            t0: 7.0 + (lIdx / 220) * 3.8,
+            glyph: ["✦", "*", "@", "o", "+"][lIdx % 5]
+          };
+          this.points.push(pt);
+          if (lIdx % 9 === 0) this.sparkleTargets.push(pt);
         }
-        this.totalLights = lightCount;
 
-        // 7. Radiant 3D Golden Star Topper & 8 Crisp ASCII Light Beams
-        const starY = Y1 + 0.14;
-        const starPts = this.fibSphere(75);
+        // 7. Blazing 3D Golden Star Crown & 12 Crisp Radiating Beams!
+        const starY = Y1 + 0.15;
+        const starPts = this.fibSphere(92);
         for (let i = 0; i < starPts.length; i++) {
           const p = starPts[i];
           this.points.push({
-            x: p.x * 0.095,
-            y: starY + p.y * 0.095,
-            z: p.z * 0.095,
+            x: p.x * 0.105,
+            y: starY + p.y * 0.105,
+            z: p.z * 0.105,
             nx: p.x, ny: p.y, nz: p.z,
             ao: 1.0,
             type: T_STAR,
-            t0: 11.8,
-            glyph: ["@", "#", "8", "*", "+"][i % 5]
+            t0: 10.2,
+            glyph: ["✦", "@", "#", "8", "*"][i % 5]
           });
         }
 
         const beams = [
-          { dx: 0, dy: 1, dz: 0, ch: "|" },
-          { dx: 1, dy: 0, dz: 0, ch: "-" },
-          { dx: -1, dy: 0, dz: 0, ch: "-" },
-          { dx: 0.62, dy: 0.78, dz: 0, ch: "/" },
-          { dx: -0.62, dy: 0.78, dz: 0, ch: "\\" },
-          { dx: 0.34, dy: 0.94, dz: 0, ch: "/" },
-          { dx: -0.34, dy: 0.94, dz: 0, ch: "\\" },
-          { dx: 0, dy: 0.72, dz: 0.68, ch: "|" }
+          { dx: 0, dy: 1, dz: 0, ch: "|", len: 0.58 },
+          { dx: 0, dy: -0.75, dz: 0, ch: "|", len: 0.30 },
+          { dx: 1, dy: 0, dz: 0, ch: "-", len: 0.52 },
+          { dx: -1, dy: 0, dz: 0, ch: "-", len: 0.52 },
+          { dx: 0.70, dy: 0.71, dz: 0, ch: "/", len: 0.48 },
+          { dx: -0.70, dy: 0.71, dz: 0, ch: "\\", len: 0.48 },
+          { dx: 0.36, dy: 0.93, dz: 0, ch: "/", len: 0.50 },
+          { dx: -0.36, dy: 0.93, dz: 0, ch: "\\", len: 0.50 },
+          { dx: 0.65, dy: -0.52, dz: 0, ch: "\\", len: 0.34 },
+          { dx: -0.65, dy: -0.52, dz: 0, ch: "/", len: 0.34 },
+          { dx: 0, dy: 0.65, dz: 0.76, ch: "|", len: 0.42 },
+          { dx: 0, dy: 0.65, dz: -0.76, ch: "|", len: 0.42 }
         ];
         beams.forEach(b => {
-          for (let d = 0.14; d <= 0.48; d += 0.038) {
+          for (let d = 0.13; d <= b.len; d += 0.036) {
             this.points.push({
               x: b.dx * d,
               y: starY + b.dy * d,
               z: b.dz * d,
               nx: b.dx, ny: b.dy, nz: b.dz,
-              ao: 1.0 - (d / 0.56) * 0.55,
+              ao: 1.05 - (d / (b.len + 0.1)) * 0.55,
               type: T_BEAM,
-              t0: 12.2 + d * 1.4,
-              glyph: d > 0.42 ? "." : b.ch
+              t0: 10.6 + d * 1.1,
+              glyph: d > b.len - 0.06 ? "✦" : b.ch
             });
           }
         });
 
-        // 8. Generous Wrapped 3D ASCII Gift Boxes Resting Around the Base (exact video proportions!)
+        // 8. Luminous Wrapped 3D ASCII Gift Boxes Around the Base
         const gifts = [
-          { x: -0.58, z: 0.22, w: 0.36, h: 0.30, d: 0.34, body: [224, 172, 34], rib: [215, 32, 46], t0: 13.0 },
-          { x: -0.18, z: 0.46, w: 0.46, h: 0.28, d: 0.36, body: [232, 224, 212], rib: [210, 34, 48], t0: 13.5 },
-          { x: 0.32, z: 0.42, w: 0.38, h: 0.26, d: 0.34, body: [204, 34, 48], rib: [255, 224, 108], t0: 14.0 },
-          { x: 0.66, z: 0.10, w: 0.32, h: 0.24, d: 0.32, body: [220, 228, 240], rib: [224, 38, 52], t0: 14.4 },
-          { x: -0.04, z: -0.52, w: 0.42, h: 0.28, d: 0.34, body: [42, 118, 232], rib: [255, 236, 150], t0: 14.8 }
+          { x: -0.60, z: 0.24, w: 0.38, h: 0.30, d: 0.34, body: [242, 184, 38], rib: [232, 34, 52], t0: 11.4 },
+          { x: -0.18, z: 0.48, w: 0.46, h: 0.28, d: 0.36, body: [244, 238, 228], rib: [232, 36, 56], t0: 11.8 },
+          { x: 0.34, z: 0.44, w: 0.38, h: 0.27, d: 0.34, body: [228, 34, 52], rib: [255, 228, 108], t0: 12.2 },
+          { x: 0.68, z: 0.10, w: 0.32, h: 0.24, d: 0.32, body: [226, 236, 248], rib: [236, 40, 58], t0: 12.6 },
+          { x: -0.04, z: -0.54, w: 0.44, h: 0.29, d: 0.34, body: [48, 136, 248], rib: [255, 238, 152], t0: 13.0 }
         ];
         gifts.forEach(g => {
-          const step = 0.036;
+          const step = 0.035;
           const hw = g.w / 2, hd = g.d / 2;
           for (let bx = -hw; bx <= hw + 0.001; bx += step) {
             for (let bz = -hd; bz <= hd + 0.001; bz += step) {
               for (let by = 0; by <= g.h + 0.001; by += step) {
                 const onFace = Math.abs(bx) >= hw - 0.02 || Math.abs(bz) >= hd - 0.02 || by >= g.h - 0.02;
                 if (!onFace) continue;
-                const isRib = Math.abs(bx) < 0.035 || Math.abs(bz) < 0.035;
+                const isRib = Math.abs(bx) < 0.036 || Math.abs(bz) < 0.036;
                 this.points.push({
                   x: g.x + bx,
                   y: by + 0.02,
                   z: g.z + bz,
-                  nx: bx / (hw || 1), ny: by >= g.h - 0.02 ? 1 : 0.2, nz: bz / (hd || 1),
-                  ao: 0.92,
+                  nx: bx / (hw || 1), ny: by >= g.h - 0.02 ? 1 : 0.25, nz: bz / (hd || 1),
+                  ao: 0.96,
                   type: T_GIFT,
                   customCol: isRib ? g.rib : g.body,
+                  isRib,
                   t0: g.t0,
                   glyph: isRib ? "#" : (by >= g.h - 0.02 ? "%" : "X")
                 });
@@ -688,30 +615,46 @@
         });
       }
 
-      buildSkyAndSnow() {
+      buildAtmosphere() {
+        // Twinkling starry backdrop
         this.stars = [];
-        for (let i = 0; i < 160; i++) {
+        for (let i = 0; i < 190; i++) {
           this.stars.push({
             u: Math.random(),
-            v: Math.random() * 0.76,
+            v: Math.random() * 0.78,
             phase: Math.random() * TAU,
-            glyph: i % 5 === 0 ? "*" : (i % 3 === 0 ? "·" : ".")
+            gold: i % 5 === 0,
+            glyph: i % 7 === 0 ? "✦" : (i % 4 === 0 ? "*" : "·")
           });
         }
+        // Soft falling snowfall
         this.snow = [];
-        for (let i = 0; i < 110; i++) {
+        for (let i = 0; i < 120; i++) {
           this.snow.push({
             u: Math.random(),
             v: Math.random(),
-            vy: 0.045 + Math.random() * 0.075,
-            vx: (Math.random() - 0.5) * 0.018,
+            vy: 0.042 + Math.random() * 0.070,
+            vx: (Math.random() - 0.5) * 0.016,
             phase: Math.random() * TAU,
             glyph: i % 4 === 0 ? "*" : (i % 2 === 0 ? "." : "·")
           });
         }
+        // 90 Rising Golden Stardust Particles Spiraling Gracefully Around the Tree!
+        this.auraDust = [];
+        for (let i = 0; i < 90; i++) {
+          this.auraDust.push({
+            u: Math.random(),
+            angle: Math.random() * TAU,
+            speedY: 0.055 + Math.random() * 0.065,
+            speedA: 0.45 + Math.random() * 0.55,
+            rBias: 0.14 + Math.random() * 0.34,
+            phase: Math.random() * TAU,
+            gold: i % 3 !== 0,
+            glyph: i % 4 === 0 ? "✦" : (i % 2 === 0 ? "*" : "·")
+          });
+        }
       }
 
-      // Responsive Terminal Grid Auto-Sizer (works crisply on 9:16 mobile, tablet & 16:9/21:9 desktop!)
       resize() {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
@@ -720,14 +663,18 @@
         this.canvas.width = Math.floor(this.width * this.dpr);
         this.canvas.height = Math.floor(this.height * this.dpr);
 
-        // High-density crisp monospace cell sizing (~5,000–8,500 letters matching agac.py video fidelity!)
+        // Quarter-resolution optical bloom buffer (silky lush glow at locked 60 FPS on desktop & mobile!)
+        this.bloomScale = 0.28;
+        this.bloomCanvas.width = Math.max(1, Math.floor(this.width * this.bloomScale));
+        this.bloomCanvas.height = Math.max(1, Math.floor(this.height * this.bloomScale));
+
         const minDim = Math.min(this.width, this.height);
         if (this.width < 520) {
-          this.fontSize = Math.max(5.8, Math.min(7.4, this.width / 58));
+          this.fontSize = Math.max(6.0, Math.min(7.8, this.width / 54));
         } else if (this.width < 900) {
-          this.fontSize = Math.max(7.2, Math.min(9.0, minDim / 88));
+          this.fontSize = Math.max(7.4, Math.min(9.2, minDim / 84));
         } else {
-          this.fontSize = Math.max(8.2, Math.min(10.2, minDim / 92));
+          this.fontSize = Math.max(8.4, Math.min(10.5, minDim / 88));
         }
 
         this.cellW = this.fontSize * 0.60;
@@ -743,9 +690,8 @@
         this.bBuf = new Uint8Array(total);
         this.glowBuf = new Uint8Array(total);
 
-        // Adjust default camera distance gently for tall portrait mobile vs wide desktop
         const aspect = this.width / Math.max(1, this.height);
-        this.baseDist = aspect < 0.75 ? 4.25 : (aspect < 1.1 ? 3.95 : 3.65);
+        this.baseDist = aspect < 0.75 ? 4.05 : (aspect < 1.1 ? 3.85 : 3.74);
         if (!this._userZoomed) this.camDist = this.baseDist;
       }
 
@@ -753,7 +699,6 @@
         window.addEventListener("resize", () => this.resize());
         const c = this.canvas;
 
-        // Mouse Drag Orbit
         c.addEventListener("pointerdown", e => {
           if (e.pointerType === "touch") return;
           this.dragging = true;
@@ -767,15 +712,14 @@
           this.lastPtr.x = e.clientX;
           this.lastPtr.y = e.clientY;
           this.yaw += dx * 0.0085;
-          this.pitch = Math.max(-0.28, Math.min(0.85, this.pitch + dy * 0.0065));
+          this.pitch = Math.max(-0.26, Math.min(0.85, this.pitch + dy * 0.0065));
         });
         window.addEventListener("pointerup", () => { this.dragging = false; });
 
-        // Wheel Zoom
         c.addEventListener("wheel", e => {
           e.preventDefault();
           this._userZoomed = true;
-          this.camDist = Math.max(2.1, Math.min(7.5, this.camDist + Math.sign(e.deltaY) * 0.24));
+          this.camDist = Math.max(2.0, Math.min(7.2, this.camDist + Math.sign(e.deltaY) * 0.22));
         }, { passive: false });
 
         // Mobile Touch Orbit & 2-Finger Pinch Zoom
@@ -801,7 +745,7 @@
             this.lastPtr.x = e.touches[0].clientX;
             this.lastPtr.y = e.touches[0].clientY;
             this.yaw += dx * 0.011;
-            this.pitch = Math.max(-0.28, Math.min(0.85, this.pitch + dy * 0.008));
+            this.pitch = Math.max(-0.26, Math.min(0.85, this.pitch + dy * 0.008));
           } else if (e.touches.length === 2) {
             const nd = Math.hypot(
               e.touches[0].clientX - e.touches[1].clientX,
@@ -809,7 +753,7 @@
             );
             if (this.pinchDist > 0) {
               this._userZoomed = true;
-              this.camDist = Math.max(2.1, Math.min(7.5, this.camDist * (this.pinchDist / nd)));
+              this.camDist = Math.max(2.0, Math.min(7.2, this.camDist * (this.pinchDist / nd)));
             }
             this.pinchDist = nd;
           }
@@ -824,19 +768,38 @@
       replay() {
         this.timeline = 0.0;
         this.yaw = 0.0;
-        this.pitch = 0.16;
+        this.pitch = 0.15;
         this._userZoomed = false;
         this.camDist = this.baseDist;
       }
 
       showComplete() {
-        this.timeline = 18.0;
+        this.timeline = 16.5;
       }
 
-      cycleTheme() {
-        this.themeIdx = (this.themeIdx + 1) % THEMES.length;
-        this.theme = THEMES[this.themeIdx];
-        return this.theme.label;
+      drawLensFlare(ctx, x, y, radius, r, g, b, alpha) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        // Soft radial jewel halo
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gr.addColorStop(0, `rgba(255,255,245,${(alpha * 0.9).toFixed(2)})`);
+        gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha * 0.55).toFixed(2)})`);
+        gr.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, TAU);
+        ctx.fill();
+
+        // Crisp 4-point optical star cross-glint
+        ctx.strokeStyle = `rgba(255,252,235,${(alpha * 0.85).toFixed(2)})`;
+        ctx.lineWidth = 1.25;
+        ctx.beginPath();
+        ctx.moveTo(x - radius * 0.95, y);
+        ctx.lineTo(x + radius * 0.95, y);
+        ctx.moveTo(x, y - radius * 0.95);
+        ctx.lineTo(x, y + radius * 0.95);
+        ctx.stroke();
+        ctx.restore();
       }
 
       render(now) {
@@ -844,7 +807,6 @@
         this.lastNow = now;
         this.timeline += dt;
 
-        // FPS counter
         this.fpsAcc++;
         if (now - this.fpsTimer >= 400) {
           this.fps = Math.round((this.fpsAcc * 1000) / (now - this.fpsTimer));
@@ -858,7 +820,6 @@
 
         const cols = this.cols;
         const rows = this.rows;
-        const totalCells = cols * rows;
         const zBuf = this.zBuf;
         const chBuf = this.chBuf;
         const rBuf = this.rBuf;
@@ -871,25 +832,60 @@
         glowBuf.fill(0);
 
         const ctx = this.ctx;
+        const bCtx = this.bCtx;
+        const t = this.timeline;
+
         ctx.save();
         ctx.scale(this.dpr, this.dpr);
 
-        // Pitch-black terminal backdrop with faint warm core aura behind tree
-        ctx.fillStyle = "#05070c";
+        // Deep velvet night backdrop + subtle warm golden atmospheric glow behind tree
+        const bgGrad = ctx.createRadialGradient(
+          this.width * 0.5, this.height * 0.48, 12,
+          this.width * 0.5, this.height * 0.48, Math.max(this.width, this.height) * 0.65
+        );
+        bgGrad.addColorStop(0.0, "#0c1428");
+        bgGrad.addColorStop(0.45, "#050914");
+        bgGrad.addColorStop(1.0, "#020307");
+        ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.width, this.height);
 
-        const theme = this.theme;
-        const t = this.timeline;
+        // Clear half-res bloom canvas
+        bCtx.clearRect(0, 0, this.bloomCanvas.width, this.bloomCanvas.height);
 
-        // 1. Background Twinkling Stars & Gently Drifting Snowflakes
+        const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+        const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+        const lx = 0.42, ly = 0.74, lz = 0.54;
+
+        const centerY = 1.24;
+        const projScale = Math.min(this.width * 0.96, this.height * 0.88) * 1.12;
+        const halfW = this.width * 0.5;
+        const halfH = this.height * 0.53;
+
+        // Warm golden aura glowing softly behind the Christmas tree & floor reflection
+        const auraStrength = Math.min(1.0, t / 7.5);
+        if (auraStrength > 0.05) {
+          const coreRad = Math.min(this.width, this.height) * 0.38;
+          const coreGrad = ctx.createRadialGradient(halfW, halfH, 8, halfW, halfH, coreRad);
+          coreGrad.addColorStop(0.0, `rgba(255, 196, 68, ${(0.14 * auraStrength).toFixed(3)})`);
+          coreGrad.addColorStop(0.45, `rgba(48, 184, 96, ${(0.07 * auraStrength).toFixed(3)})`);
+          coreGrad.addColorStop(1.0, "rgba(0,0,0,0)");
+          ctx.fillStyle = coreGrad;
+          ctx.beginPath();
+          ctx.arc(halfW, halfH, coreRad, 0, TAU);
+          ctx.fill();
+        }
+
+        // 1. Twinkling Stars & Drifting Snowflakes
         ctx.font = `${this.fontSize}px 'JetBrains Mono', monospace`;
         ctx.textBaseline = "top";
-        const [sr, sg, sb] = theme.sky;
+        const [sr, sg, sb] = PALETTE.sky;
 
         for (let i = 0; i < this.stars.length; i++) {
           const st = this.stars[i];
-          const tw = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * 2.4 + st.phase));
-          ctx.fillStyle = `rgba(${sr},${sg},${sb},${tw.toFixed(2)})`;
+          const tw = 0.25 + 0.65 * (0.5 + 0.5 * Math.sin(t * 2.8 + st.phase));
+          ctx.fillStyle = st.gold
+            ? `rgba(255,228,132,${tw.toFixed(2)})`
+            : `rgba(${sr},${sg},${sb},${tw.toFixed(2)})`;
           ctx.fillText(st.glyph, Math.floor(st.u * cols) * this.cellW, Math.floor(st.v * rows) * this.cellH);
         }
 
@@ -897,23 +893,11 @@
           const fl = this.snow[i];
           fl.v = (fl.v + fl.vy * dt) % 1.0;
           fl.u = (fl.u + (fl.vx + Math.sin(t * 0.9 + fl.phase) * 0.012) * dt + 1.0) % 1.0;
-          ctx.fillStyle = `rgba(${sr},${sg},${sb},0.72)`;
+          ctx.fillStyle = `rgba(${sr},${sg},${sb},0.78)`;
           ctx.fillText(fl.glyph, Math.floor(fl.u * cols) * this.cellW, Math.floor(fl.v * rows) * this.cellH);
         }
 
-        // 2. Project All 3D Points into Monospace Cell Z-Buffer
-        const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
-        const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-
-        // Directional studio light vector (top-front-right)
-        const lx = 0.42, ly = 0.72, lz = 0.55;
-
-        // Fit entire tree (height ~3.1 units) comfortably inside viewport height & width
-        const centerY = 1.24;
-        const projScale = Math.min(this.width * 0.95, this.height * 0.88) * 1.12;
-        const halfW = this.width * 0.5;
-        const halfH = this.height * 0.50;
-
+        // 2. Project All 3D Tree Points into Monospace Z-Buffer
         let activeLights = 0;
         let activeLetters = 0;
         const pts = this.points;
@@ -922,18 +906,13 @@
           const p = pts[i];
           if (t < p.t0) continue;
 
-          // Smooth pop-in scale during first 0.35s of appearance
-          const grow = Math.min(1.0, (t - p.t0) / 0.35);
-
-          // Rotate around Y (yaw)
+          const grow = Math.min(1.0, (t - p.t0) / 0.32);
           const rx = p.x * cy - p.z * sy;
           const rz0 = p.x * sy + p.z * cy;
-          const ry0 = (p.y - centerY) * (p.type === T_GROUND ? 1 : (0.85 + 0.15 * grow));
+          const ry0 = (p.y - centerY) * (p.type === T_GROUND ? 1 : (0.86 + 0.14 * grow));
 
-          // Rotate around X (pitch)
           const ry = ry0 * cp - rz0 * sp;
           const rz = ry0 * sp + rz0 * cp + this.camDist;
-
           if (rz < 0.35) continue;
 
           const invZ = projScale / rz;
@@ -947,64 +926,68 @@
           const cellIdx = row * cols + col;
           if (p.type === T_LIGHT) activeLights++;
 
-          // Z-Buffer depth test (Star & Lights slightly win tie-breakers to stay sparkling)
-          const zBias = (p.type === T_LIGHT || p.type === T_STAR || p.type === T_BEAM) ? -0.06 : 0;
+          const zBias = (p.type === T_LIGHT || p.type === T_STAR || p.type === T_BEAM || p.type === T_GARLAND) ? -0.06 : 0;
           if (rz + zBias >= zBuf[cellIdx]) continue;
           zBuf[cellIdx] = rz + zBias;
 
-          // Rotate normal for 3D directional lighting
           const rnx = p.nx * cy - p.nz * sy;
           const rnz0 = p.nx * sy + p.nz * cy;
           const rny = p.ny * cp - rnz0 * sp;
           const rnz = p.ny * sp + rnz0 * cp;
 
           const ndl = Math.max(0, rnx * lx + rny * ly + rnz * lz);
-          const shade = Math.min(1.28, (0.48 + 0.72 * ndl) * p.ao);
+          const shade = Math.min(1.32, (0.50 + 0.72 * ndl) * p.ao);
 
           let r = 200, g = 200, b = 200;
           let glyph = p.glyph;
           let glow = 0;
 
           if (p.type === T_NEEDLE) {
-            const base = theme.foliage[p.cIdx];
-            r = base[0] * shade;
-            g = base[1] * shade;
-            b = base[2] * shade;
-            const rampIdx = Math.max(0, Math.min(SHADE_RAMP.length - 1, Math.floor(shade * (SHADE_RAMP.length - 1))));
-            if (ndl > 0.65) glyph = SHADE_RAMP[rampIdx];
+            const base = PALETTE.foliage[p.cIdx];
+            r = base[0] * shade; g = base[1] * shade; b = base[2] * shade;
+            if (ndl > 0.62) {
+              const ri = Math.min(SHADE_RAMP.length - 1, Math.floor(shade * (SHADE_RAMP.length - 1)));
+              glyph = SHADE_RAMP[ri];
+            }
           } else if (p.type === T_SNOWCAP) {
-            const s = 0.72 + 0.35 * ndl;
-            r = theme.snow[0] * s; g = theme.snow[1] * s; b = theme.snow[2] * s;
-          } else if (p.type === T_TRUNK) {
-            r = theme.trunk[0] * shade; g = theme.trunk[1] * shade; b = theme.trunk[2] * shade;
-          } else if (p.type === T_GARLAND) {
-            const sh = 0.85 + 0.28 * Math.sin(t * 4.0 + p.y * 8.0);
-            r = theme.garland[0] * sh; g = theme.garland[1] * sh; b = theme.garland[2] * sh;
+            const s = 0.82 + 0.32 * ndl;
+            r = PALETTE.snow[0] * s; g = PALETTE.snow[1] * s; b = PALETTE.snow[2] * s;
             glow = 1;
+          } else if (p.type === T_TRUNK) {
+            r = PALETTE.trunk[0] * shade; g = PALETTE.trunk[1] * shade; b = PALETTE.trunk[2] * shade;
+          } else if (p.type === T_GARLAND) {
+            // Traveling shimmering golden light wave spiraling up the ribbon!
+            const wave = 0.85 + 0.45 * Math.sin(t * 5.2 - p.u * 22.0 + p.cIdx * 2.0);
+            const colG = p.cIdx === 0 ? PALETTE.garlandA : PALETTE.garlandB;
+            r = colG[0] * wave; g = colG[1] * wave; b = colG[2] * wave;
+            glow = wave > 1.05 ? 2 : 1;
           } else if (p.type === T_BALL) {
-            const bc = theme.balls[p.cIdx];
-            const spec = Math.pow(Math.max(0, ndl), 4.0) * 140;
-            r = bc[0] * shade + spec;
-            g = bc[1] * shade + spec;
-            b = bc[2] * shade + spec;
-            if (spec > 65) glyph = "*";
-            glow = spec > 45 ? 1 : 0;
+            const bc = PALETTE.balls[p.cIdx];
+            const spec = Math.pow(Math.max(0, ndl), 3.6) * 185;
+            r = bc[0] * shade + spec; g = bc[1] * shade + spec; b = bc[2] * shade + spec;
+            if (spec > 65) glyph = "✦";
+            glow = spec > 40 ? 2 : 1;
           } else if (p.type === T_LIGHT) {
-            const lc = theme.lights[p.cIdx];
-            const pulse = 0.65 + 0.55 * Math.sin(t * 4.8 + p.phase);
+            const lc = PALETTE.lights[p.cIdx];
+            const pulse = 0.72 + 0.58 * Math.sin(t * 5.4 + p.phase);
             r = lc[0] * pulse; g = lc[1] * pulse; b = lc[2] * pulse;
-            glow = pulse > 0.85 ? 2 : 1;
+            glow = pulse > 0.95 ? 2 : 1;
           } else if (p.type === T_STAR || p.type === T_BEAM) {
-            const pulse = p.type === T_STAR ? (0.95 + 0.2 * Math.sin(t * 5.0)) : p.ao;
-            r = theme.star[0] * pulse; g = theme.star[1] * pulse; b = theme.star[2] * pulse;
-            glow = p.type === T_STAR ? 2 : 1;
+            const pulse = p.type === T_STAR ? (1.02 + 0.24 * Math.sin(t * 5.8)) : (p.ao * (0.9 + 0.22 * Math.sin(t * 4.5)));
+            r = PALETTE.star[0] * pulse; g = PALETTE.star[1] * pulse; b = PALETTE.star[2] * pulse;
+            glow = 2;
           } else if (p.type === T_GIFT) {
             const gc = p.customCol;
-            const gs = 0.55 + 0.55 * ndl;
+            const gs = 0.62 + 0.56 * ndl;
             r = gc[0] * gs; g = gc[1] * gs; b = gc[2] * gs;
+            if (p.isRib) glow = 1;
           } else if (p.type === T_GROUND) {
-            const gs = p.ao * 0.72;
-            r = theme.ground[0] * gs; g = theme.ground[1] * gs; b = theme.ground[2] * gs;
+            // Subtle golden glow reflection pooling on the silver floor near the tree base!
+            const warmBoost = p.dist < 1.35 ? (1 - p.dist / 1.35) * 0.45 * auraStrength : 0;
+            const gs = p.ao * 0.78;
+            r = PALETTE.ground[0] * gs + 255 * warmBoost;
+            g = PALETTE.ground[1] * gs + 195 * warmBoost;
+            b = PALETTE.ground[2] * gs + 70 * warmBoost;
           }
 
           chBuf[cellIdx] = glyph;
@@ -1014,29 +997,15 @@
           glowBuf[cellIdx] = glow;
         }
 
-        // 3. Soft Radiant Glow Halo Behind Star Topper (when star has appeared)
-        if (t >= 11.8) {
-          const syStar = (2.66 - centerY) * cp - 0 * sp;
-          const szStar = (2.66 - centerY) * sp + this.camDist;
-          if (szStar > 0.35) {
-            const sPx = halfW;
-            const sPy = halfH - syStar * (projScale / szStar);
-            const rad = Math.min(this.width, this.height) * 0.14;
-            const grad = ctx.createRadialGradient(sPx, sPy, 2, sPx, sPy, rad);
-            grad.addColorStop(0, `rgba(${theme.star[0]},${theme.star[1]},${theme.star[2]},0.36)`);
-            grad.addColorStop(0.45, `rgba(${theme.star[0]},${theme.star[1]},${theme.star[2]},0.10)`);
-            grad.addColorStop(1, "rgba(0,0,0,0)");
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(sPx, sPy, rad, 0, TAU);
-            ctx.fill();
-          }
-        }
-
-        // 4. Flush Crisp Monospace Character Buffer to Canvas
+        // 3. Flush Crisp Monospace Characters + Populate Offscreen Optical Bloom Buffer
         ctx.font = `600 ${this.fontSize}px 'JetBrains Mono', monospace`;
+        bCtx.font = `700 ${this.fontSize * this.bloomScale}px 'JetBrains Mono', monospace`;
+        bCtx.textBaseline = "top";
+        const bs = this.bloomScale;
+
         for (let row = 0; row < rows; row++) {
           const py = row * this.cellH;
+          const bpy = py * bs;
           const rowOff = row * cols;
           for (let col = 0; col < cols; col++) {
             const idx = rowOff + col;
@@ -1044,21 +1013,109 @@
             if (!ch) continue;
             activeLetters++;
             const r = rBuf[idx], g = gBuf[idx], b = bBuf[idx];
+            const px = col * this.cellW;
+            const rgb = `rgb(${r},${g},${b})`;
+            ctx.fillStyle = rgb;
+            ctx.fillText(ch, px, py);
+
+            // Paint radiant items into offscreen bloom buffer
             const gl = glowBuf[idx];
             if (gl > 0) {
-              ctx.shadowColor = `rgb(${r},${g},${b})`;
-              ctx.shadowBlur = gl === 2 ? 12 : 6;
-            } else if (ctx.shadowBlur !== 0) {
-              ctx.shadowBlur = 0;
+              bCtx.fillStyle = rgb;
+              bCtx.fillText(ch, px * bs, bpy);
+              if (gl === 2) {
+                bCtx.fillText(ch, px * bs, bpy); // double intensity for star & jewel peaks
+              }
             }
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            ctx.fillText(ch, col * this.cellW, py);
           }
         }
-        ctx.shadowBlur = 0;
+
+        // 4. Rising Golden Stardust Spiral Around the Tree (Painted into BOTH main & bloom!)
+        if (t > 2.2) {
+          const dustAlpha = Math.min(1, (t - 2.2) / 2.5);
+          for (let i = 0; i < this.auraDust.length; i++) {
+            const d = this.auraDust[i];
+            d.u = (d.u + d.speedY * dt) % 1.0;
+            d.angle += d.speedA * dt;
+
+            const dy = 0.25 + d.u * 2.55;
+            const dr = this.envelope(dy, 0.28, 2.54) + d.rBias;
+            const wx = Math.cos(d.angle) * dr;
+            const wz = Math.sin(d.angle) * dr;
+
+            const rx = wx * cy - wz * sy;
+            const rz0 = wx * sy + wz * cy;
+            const ry0 = dy - centerY;
+            const ry = ry0 * cp - rz0 * sp;
+            const rz = ry0 * sp + rz0 * cp + this.camDist;
+            if (rz < 0.4) continue;
+
+            const invZ = projScale / rz;
+            const sx = halfW + rx * invZ;
+            const sy2 = halfH - ry * invZ;
+            const fade = Math.sin(d.u * Math.PI) * (0.45 + 0.55 * Math.sin(t * 5.0 + d.phase)) * dustAlpha;
+            if (fade < 0.08) continue;
+
+            const colStr = d.gold
+              ? `rgba(255,226,112,${fade.toFixed(2)})`
+              : `rgba(148,232,255,${fade.toFixed(2)})`;
+            ctx.fillStyle = colStr;
+            ctx.fillText(d.glyph, sx, sy2);
+            bCtx.fillStyle = colStr;
+            bCtx.fillText(d.glyph, sx * bs, sy2 * bs);
+          }
+        }
+
+        // 5. Composite Dual-Pass Optical Bloom (Ultra-fast Quarter-Res Hardware-Smooth Glow!)
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.filter = "blur(4px)";
+        ctx.globalAlpha = 0.90;
+        ctx.drawImage(this.bloomCanvas, 0, 0, this.width, this.height);
+
+        ctx.filter = "blur(10px)";
+        ctx.globalAlpha = 0.55;
+        ctx.drawImage(this.bloomCanvas, 0, 0, this.width, this.height);
         ctx.restore();
 
-        // 5. Update Minimal Terminal Telemetry HUD
+        // 6. Optical Cross-Flare Starburst Glints on Star Topper & Brightest Fairy Lights!
+        if (t >= 10.2) {
+          const syStar = (2.69 - centerY) * cp;
+          const szStar = (2.69 - centerY) * sp + this.camDist;
+          if (szStar > 0.35) {
+            const sPx = halfW;
+            const sPy = halfH - syStar * (projScale / szStar);
+            const starRad = Math.min(this.width, this.height) * (0.11 + 0.015 * Math.sin(t * 4.5));
+            this.drawLensFlare(ctx, sPx, sPy, starRad, 255, 224, 96, 0.82);
+          }
+        }
+
+        // Shimmering mini jewel flares twinkling across the tree canopy
+        for (let i = 0; i < this.sparkleTargets.length; i++) {
+          const p = this.sparkleTargets[i];
+          if (t < p.t0) continue;
+          const flash = Math.sin(t * 4.2 + p.phase * 2.0);
+          if (flash < 0.72) continue;
+
+          const rx = p.x * cy - p.z * sy;
+          const rz0 = p.x * sy + p.z * cy;
+          if (rz0 > 0.25) continue; // only sparkle front-facing lights!
+          const ry0 = p.y - centerY;
+          const ry = ry0 * cp - rz0 * sp;
+          const rz = ry0 * sp + rz0 * cp + this.camDist;
+          if (rz < 0.35) continue;
+
+          const invZ = projScale / rz;
+          const sx = halfW + rx * invZ;
+          const sy2 = halfH - ry * invZ;
+          const intensity = (flash - 0.72) / 0.28;
+          const lc = PALETTE.lights[p.cIdx];
+          this.drawLensFlare(ctx, sx, sy2, 12 + intensity * 14, lc[0], lc[1], lc[2], intensity * 0.78);
+        }
+
+        ctx.restore();
+
+        // 7. Update Telemetry HUD
         const deg = (((this.yaw * 180) / Math.PI) % 360 + 360) % 360;
         this.hud.time.textContent = `t ${t.toFixed(2).padStart(5, "0")}s`;
         this.hud.rot.textContent = `${deg.toFixed(2).padStart(6, "0")}°`;
@@ -1068,7 +1125,6 @@
       }
     }
 
-    // Boot Application
     document.addEventListener("DOMContentLoaded", () => {
       const canvas = document.getElementById("ascii-canvas");
       const hud = {
@@ -1079,7 +1135,7 @@
         fps: document.getElementById("hud-fps")
       };
 
-      const app = new PureAsciiTreeApp(canvas, hud);
+      const app = new RadiantAsciiTree(canvas, hud);
       window.asciiTreeApp = app;
 
       function loop(now) {
@@ -1088,49 +1144,21 @@
       }
       requestAnimationFrame(loop);
 
-      // Auto-dim dock for pure cinematic video feel
-      const dockWrap = document.getElementById("dock-wrap");
+      // Auto-fade the 2 tiny top-left buttons after inactivity
+      const mini = document.getElementById("mini-controls");
       let idleTimer = null;
       const wake = () => {
-        dockWrap.classList.remove("idle");
+        mini.classList.remove("idle");
         clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => dockWrap.classList.add("idle"), 4000);
+        idleTimer = setTimeout(() => mini.classList.add("idle"), 3500);
       };
       window.addEventListener("pointermove", wake);
       window.addEventListener("pointerdown", wake);
       wake();
 
-      // Controls
       document.getElementById("btn-replay").addEventListener("click", () => app.replay());
-      document.getElementById("btn-full").addEventListener("click", () => app.showComplete());
 
-      const btnTheme = document.getElementById("btn-theme");
-      const themeLbl = document.getElementById("theme-lbl");
-      btnTheme.addEventListener("click", () => {
-        themeLbl.textContent = app.cycleTheme();
-      });
-
-      const btnSpin = document.getElementById("btn-spin");
-      btnSpin.addEventListener("click", () => {
-        app.autoRotate = !app.autoRotate;
-        btnSpin.classList.toggle("active", app.autoRotate);
-      });
-
-      const stage = document.getElementById("stage");
-      const btnCrt = document.getElementById("btn-crt");
-      btnCrt.addEventListener("click", () => {
-        stage.classList.toggle("crt");
-        btnCrt.classList.toggle("active", stage.classList.contains("crt"));
-      });
-
-      document.getElementById("btn-snap").addEventListener("click", () => {
-        const a = document.createElement("a");
-        a.download = `ascii-christmas-tree-${Date.now()}.png`;
-        a.href = canvas.toDataURL("image/png");
-        a.click();
-      });
-
-      // Music with Web Audio fallback
+      // Music Toggle with Web Audio Synth Fallback
       const audioEl = document.getElementById("bgMusic");
       const btnAudio = document.getElementById("btn-audio");
       const audioLbl = document.getElementById("audio-lbl");
@@ -1168,19 +1196,19 @@
         if (!isPlaying) {
           audioEl.play().then(() => {
             isPlaying = true;
-            btnAudio.classList.add("playing", "active");
+            btnAudio.classList.add("playing");
             audioLbl.textContent = "⏸ Tắt";
           }).catch(() => {
             startSynth();
             isPlaying = true;
-            btnAudio.classList.add("playing", "active");
+            btnAudio.classList.add("playing");
             audioLbl.textContent = "⏸ Tắt";
           });
         } else {
           audioEl.pause();
           stopSynth();
           isPlaying = false;
-          btnAudio.classList.remove("playing", "active");
+          btnAudio.classList.remove("playing");
           audioLbl.textContent = "▶ Nhạc";
         }
       });
