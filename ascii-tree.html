@@ -233,7 +233,7 @@
     </div>
   </div>
 
-  <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+  <audio id="bgMusic" src="music.mp3" loop autoplay preload="auto"></audio>
 
   <script>
   (() => {
@@ -1158,11 +1158,12 @@
 
       document.getElementById("btn-replay").addEventListener("click", () => app.replay());
 
-      // Music Toggle with Web Audio Synth Fallback
+      // Music Autoplay + Seamless First-Gesture Unlock + Web Audio Synth Fallback
       const audioEl = document.getElementById("bgMusic");
       const btnAudio = document.getElementById("btn-audio");
       const audioLbl = document.getElementById("audio-lbl");
       let isPlaying = false;
+      let userPaused = false;
       let synthCtx = null, synthTimer = null;
 
       function startSynth() {
@@ -1192,19 +1193,51 @@
         if (synthCtx) { synthCtx.close(); synthCtx = null; }
       }
 
-      btnAudio.addEventListener("click", () => {
-        if (!isPlaying) {
-          audioEl.play().then(() => {
-            isPlaying = true;
-            btnAudio.classList.add("playing");
-            audioLbl.textContent = "⏸ Tắt";
+      function markPlaying() {
+        isPlaying = true;
+        btnAudio.classList.add("playing");
+        audioLbl.textContent = "⏸ Tắt";
+      }
+
+      function playMusic(allowSynthFallback = false) {
+        if (isPlaying || userPaused) return;
+        audioEl.volume = 0.72;
+        const p = audioEl.play();
+        if (p && typeof p.then === "function") {
+          p.then(() => {
+            markPlaying();
+            removeUnlockers();
           }).catch(() => {
-            startSynth();
-            isPlaying = true;
-            btnAudio.classList.add("playing");
-            audioLbl.textContent = "⏸ Tắt";
+            if (allowSynthFallback) {
+              startSynth();
+              markPlaying();
+              removeUnlockers();
+            }
           });
+        }
+      }
+
+      const unlockOnGesture = e => {
+        if (e && e.target && e.target.closest && e.target.closest("#btn-audio")) return;
+        playMusic(false);
+      };
+      const unlockEvents = ["pointerdown", "touchstart", "click", "keydown"];
+      function removeUnlockers() {
+        unlockEvents.forEach(ev => window.removeEventListener(ev, unlockOnGesture, true));
+      }
+      unlockEvents.forEach(ev => window.addEventListener(ev, unlockOnGesture, { capture: true, passive: true }));
+
+      // Attempt immediate autoplay on load
+      playMusic(false);
+
+      btnAudio.addEventListener("click", e => {
+        e.stopPropagation();
+        if (!isPlaying) {
+          userPaused = false;
+          playMusic(true);
         } else {
+          userPaused = true;
+          removeUnlockers();
           audioEl.pause();
           stopSynth();
           isPlaying = false;

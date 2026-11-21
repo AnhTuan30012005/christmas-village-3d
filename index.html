@@ -368,7 +368,7 @@
     </div>
   </div>
 
-  <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+  <audio id="bgMusic" src="music.mp3" loop autoplay preload="auto"></audio>
 
   <script src="three.min.js"></script>
   <script src="OrbitControls.js"></script>
@@ -433,11 +433,12 @@
         });
       });
 
-      // Audio Controller with Web Audio Synth Fallback
+      // Audio Controller: Autoplay on Load + Seamless First-Gesture Unlock + Web Audio Synth Fallback
       const audioEl = document.getElementById("bgMusic");
       const btnAudio = document.getElementById("btn-audio");
       const audioLabel = document.getElementById("audio-label");
       let isPlaying = false;
+      let userPaused = false;
       let synthAudioCtx = null;
       let synthInterval = null;
 
@@ -470,19 +471,51 @@
         if (synthAudioCtx) { synthAudioCtx.close(); synthAudioCtx = null; }
       }
 
-      btnAudio.addEventListener("click", () => {
-        if (!isPlaying) {
-          audioEl.play().then(() => {
-            isPlaying = true;
-            btnAudio.classList.add("audio-playing", "active");
-            audioLabel.textContent = "⏸ Tắt";
+      function markAudioPlaying() {
+        isPlaying = true;
+        btnAudio.classList.add("audio-playing", "active");
+        audioLabel.textContent = "⏸ Tắt";
+      }
+
+      function playBgMusic(allowSynthFallback = false) {
+        if (isPlaying || userPaused) return;
+        audioEl.volume = 0.72;
+        const p = audioEl.play();
+        if (p && typeof p.then === "function") {
+          p.then(() => {
+            markAudioPlaying();
+            removeAudioUnlockers();
           }).catch(() => {
-            startSynthChristmasMusic();
-            isPlaying = true;
-            btnAudio.classList.add("audio-playing", "active");
-            audioLabel.textContent = "⏸ Tắt";
+            if (allowSynthFallback) {
+              startSynthChristmasMusic();
+              markAudioPlaying();
+              removeAudioUnlockers();
+            }
           });
+        }
+      }
+
+      const unlockAudioGesture = e => {
+        if (e && e.target && e.target.closest && e.target.closest("#btn-audio")) return;
+        playBgMusic(false);
+      };
+      const audioUnlockEvents = ["pointerdown", "touchstart", "click", "keydown"];
+      function removeAudioUnlockers() {
+        audioUnlockEvents.forEach(ev => window.removeEventListener(ev, unlockAudioGesture, true));
+      }
+      audioUnlockEvents.forEach(ev => window.addEventListener(ev, unlockAudioGesture, { capture: true, passive: true }));
+
+      // Attempt immediate autoplay on load
+      playBgMusic(false);
+
+      btnAudio.addEventListener("click", e => {
+        e.stopPropagation();
+        if (!isPlaying) {
+          userPaused = false;
+          playBgMusic(true);
         } else {
+          userPaused = true;
+          removeAudioUnlockers();
           audioEl.pause();
           stopSynthMusic();
           isPlaying = false;
