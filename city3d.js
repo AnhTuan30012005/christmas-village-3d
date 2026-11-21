@@ -468,6 +468,19 @@ class ChristmasCity3D {
     this.walkthroughActive = false;
     this.walkthroughT = 0;
 
+    // God-Mode / Free-Fly 6-DOF Exploration State
+    this.freeFly = false;
+    this.keys = {};
+    this.flyYaw = 0;
+    this.flyPitch = 0;
+    this.flyVel = new THREE.Vector3();
+    this.isDraggingLook = false;
+    this.lastPointer = { x: 0, y: 0 };
+    this.raycaster = new THREE.Raycaster();
+    this.onModeChange = null;
+    this.onHudUpdate = null;
+    this._hudTimer = 0;
+
     this.unitBox = new THREE.BoxGeometry(1, 1, 1);
     this.bulbGeo = new THREE.SphereGeometry(0.072, 6, 6);
     this.groundGlowGeo = new THREE.PlaneGeometry(1, 1);
@@ -3061,13 +3074,188 @@ class ChristmasCity3D {
       this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
-      this.controls.maxPolarAngle = Math.PI / 2 - 0.04;
-      this.controls.minDistance = 8;
+      this.controls.enablePan = true;
+      this.controls.screenSpacePanning = false;
+      this.controls.panSpeed = 1.15;
+      this.controls.maxPolarAngle = Math.PI / 2 - 0.015;
+      this.controls.minDistance = 1.8;
       this.controls.maxDistance = 240;
       this.controls.target.set(2.0, 4.0, 2.0);
       this.controls.addEventListener("start", () => {
         this.camFlight = null;
         this.walkthroughActive = false;
+      });
+    }
+  }
+
+  // Toggle God-Mode / 6-DOF Free-Fly Exploration ("Góc Nhìn Thượng Đế")
+  setFreeFly(enabled) {
+    this.freeFly = !!enabled;
+    this.camFlight = null;
+    this.walkthroughActive = false;
+    this.autoRotate = false;
+    this.flyVel.set(0, 0, 0);
+
+    if (this.freeFly) {
+      if (this.controls) this.controls.enabled = false;
+      // Extract exact current yaw & pitch so camera NEVER jumps when entering Free-Fly
+      const dir = new THREE.Vector3();
+      this.camera.getWorldDirection(dir);
+      this.flyYaw = Math.atan2(-dir.x, -dir.z);
+      this.flyPitch = Math.asin(Math.max(-0.98, Math.min(0.98, dir.y)));
+      this.camera.rotation.order = "YXZ";
+      this.camera.rotation.set(this.flyPitch, this.flyYaw, 0);
+    } else {
+      if (this.controls) {
+        const dir = new THREE.Vector3();
+        this.camera.getWorldDirection(dir);
+        const lookDist = Math.max(6, Math.min(28, this.camera.position.y * 1.4 + 4));
+        const tgt = this.camera.position.clone().addScaledVector(dir, lookDist);
+        tgt.y = Math.max(0.8, Math.min(24, tgt.y));
+        this.controls.target.copy(tgt);
+        this.controls.enabled = true;
+        this.controls.update();
+      }
+    }
+    if (typeof this.onModeChange === "function") {
+      this.onModeChange(this.freeFly);
+    }
+  }
+
+  toggleFreeFly() {
+    this.setFreeFly(!this.freeFly);
+    return this.freeFly;
+  }
+
+  // Identify current village/landmark zone for live God-Mode HUD compass
+  getCurrentZoneName() {
+    const p = this.camera.position;
+    if (p.y > 58) return "🦅 Đỉnh Trời (Toàn Thung Lũng)";
+    if (Math.hypot(p.x + 54, p.z) < 22) return "⛸ Làng Hồ Băng & Cầu Gỗ";
+    if (Math.hypot(p.x - 54, p.z) < 22) return "🎡 Khu Hội Chợ & Vòng Quay";
+    if (Math.hypot(p.x, p.z + 54) < 22) return "🚂 Làng Xưởng Santa & Ga Tàu";
+    if (Math.abs(p.x) < 15 && p.z > 34) return "⛩ Phố Cổng Chào Giáng Sinh";
+    if (Math.hypot(p.x - 21.8, p.z + 11.6) < 11) return "⛪ Nhà Thờ Gothic";
+    if (Math.hypot(p.x + 21.0, p.z + 11.2) < 9) return "🕰 Tháp Đồng Hồ Cổ";
+    if (Math.hypot(p.x, p.z) < 15) return "🎄 Quảng Trường Cây Thông";
+    if (Math.hypot(p.x, p.z) < 37) return "🏘 Phố Cổ Vòng Đồng Tâm";
+    return "🏔 Thung Lũng Tuyết Trắng";
+  }
+
+  // Double-Click Anywhere -> Raycast & Smoothly Fly Right Into That Nook!
+  flyToWorldPoint(point) {
+    this.walkthroughActive = false;
+    this.autoRotate = false;
+    const toCam = this.camera.position.clone().sub(point);
+    const flatLen = Math.hypot(toCam.x, toCam.z);
+    let dx = flatLen > 0.2 ? toCam.x / flatLen : 0.4;
+    let dz = flatLen > 0.2 ? toCam.z / flatLen : 0.9;
+    const endPos = new THREE.Vector3(
+      point.x + dx * 7.2,
+      Math.max(2.2, point.y + 3.4),
+      point.z + dz * 7.2
+    );
+    const endTarget = new THREE.Vector3(point.x, Math.max(1.0, point.y + 0.8), point.z);
+
+    if (this.freeFly) {
+      // Smoothly fly in Free-Fly too by computing target yaw/pitch
+      const dir = endTarget.clone().sub(endPos).normalize();
+      this.camFlight = {
+        startPos: this.camera.position.clone(),
+        endPos,
+        startYaw: this.flyYaw,
+        endYaw: Math.atan2(-dir.x, -dir.z),
+        startPitch: this.flyPitch,
+        endPitch: Math.asin(Math.max(-0.98, Math.min(0.98, dir.y))),
+        freeFlyFlight: true,
+        t: 0,
+        duration: 1.05
+      };
+    } else {
+      this.camFlight = {
+        startPos: this.camera.position.clone(),
+        endPos,
+        startTarget: this.controls ? this.controls.target.clone() : new THREE.Vector3(0, 3, 0),
+        endTarget,
+        t: 0,
+        duration: 1.05
+      };
+    }
+  }
+
+  // Smooth 6-DOF Free-Fly & Orbit Keyboard Glide Update
+  updateFreeMovement(dt) {
+    const k = this.keys;
+    const fIn = (k["KeyW"] || k["ArrowUp"] ? 1 : 0) - (k["KeyS"] || k["ArrowDown"] ? 1 : 0);
+    const rIn = (k["KeyD"] || k["ArrowRight"] ? 1 : 0) - (k["KeyA"] || k["ArrowLeft"] ? 1 : 0);
+    const uIn = (k["Space"] || k["KeyE"] ? 1 : 0) - (k["KeyQ"] || k["KeyC"] || k["ControlLeft"] ? 1 : 0);
+    const hasMove = fIn !== 0 || rIn !== 0 || uIn !== 0;
+
+    if (this.freeFly) {
+      if (hasMove) this.camFlight = null;
+
+      // Apply yaw/pitch unless actively flying via preset/dblclick
+      if (!this.camFlight) {
+        this.camera.rotation.order = "YXZ";
+        this.camera.rotation.set(this.flyPitch, this.flyYaw, 0);
+      }
+
+      const boost = (k["ShiftLeft"] || k["ShiftRight"]) ? 2.6 : 1.0;
+      const baseSpeed = 16.5 * boost;
+
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).normalize();
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion).normalize();
+      const desired = new THREE.Vector3();
+      desired.addScaledVector(forward, fIn * baseSpeed);
+      desired.addScaledVector(right, rIn * baseSpeed);
+      desired.y += uIn * baseSpeed * 0.85;
+
+      // Silky exponential damping for AAA spectator feel
+      const damp = 1 - Math.exp(-9.5 * dt);
+      this.flyVel.lerp(desired, damp);
+
+      if (this.flyVel.lengthSq() > 0.0001) {
+        this.camera.position.addScaledVector(this.flyVel, dt);
+        // Keep safely above ground and inside valley sky dome
+        this.camera.position.y = Math.max(0.95, Math.min(155, this.camera.position.y));
+        const rHoriz = Math.hypot(this.camera.position.x, this.camera.position.z);
+        if (rHoriz > 175) {
+          this.camera.position.x *= 175 / rHoriz;
+          this.camera.position.z *= 175 / rHoriz;
+        }
+      }
+    } else if (hasMove && this.controls) {
+      // Allow immediate WASD / Arrow / E / Q roaming even in Orbit Mode!
+      this.camFlight = null;
+      this.walkthroughActive = false;
+      const boost = (k["ShiftLeft"] || k["ShiftRight"]) ? 2.4 : 1.0;
+      const speed = 22.0 * boost * dt;
+
+      const forward = new THREE.Vector3();
+      this.camera.getWorldDirection(forward);
+      forward.y = 0;
+      if (forward.lengthSq() > 0.0001) forward.normalize();
+      const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+      const delta = new THREE.Vector3();
+      delta.addScaledVector(forward, fIn * speed);
+      delta.addScaledVector(right, rIn * speed);
+      delta.y = uIn * speed * 0.75;
+
+      this.camera.position.add(delta);
+      this.controls.target.add(delta);
+      this.camera.position.y = Math.max(1.2, Math.min(165, this.camera.position.y));
+      this.controls.target.y = Math.max(0.5, Math.min(60, this.controls.target.y));
+    }
+
+    // Periodic HUD update (10 Hz)
+    this._hudTimer += dt;
+    if (this._hudTimer >= 0.10 && typeof this.onHudUpdate === "function") {
+      this._hudTimer = 0;
+      this.onHudUpdate({
+        freeFly: this.freeFly,
+        zone: this.getCurrentZoneName(),
+        alt: this.camera.position.y.toFixed(1)
       });
     }
   }
@@ -3080,10 +3268,87 @@ class ChristmasCity3D {
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(this.width, this.height);
     });
+
+    // Keyboard Controls (WASD / Arrows / Space / E / Q / C / Shift / F / G)
+    const isTyping = () => {
+      const el = document.activeElement;
+      return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+    };
+    window.addEventListener("keydown", e => {
+      if (isTyping()) return;
+      if (e.code === "KeyF") {
+        this.toggleFreeFly();
+        return;
+      }
+      if (e.code === "KeyG") {
+        this.flyToPreset("godview");
+        return;
+      }
+      this.keys[e.code] = true;
+    });
+    window.addEventListener("keyup", e => {
+      this.keys[e.code] = false;
+    });
+    window.addEventListener("blur", () => {
+      this.keys = {};
+      this.isDraggingLook = false;
+    });
+
+    const dom = this.renderer.domElement;
+
+    // Smooth Mouse-Drag 360° Look in Free-Fly Mode
+    dom.addEventListener("pointerdown", e => {
+      if (!this.freeFly) return;
+      this.isDraggingLook = true;
+      this.camFlight = null;
+      this.lastPointer.x = e.clientX;
+      this.lastPointer.y = e.clientY;
+    });
+    window.addEventListener("pointermove", e => {
+      if (!this.freeFly || !this.isDraggingLook) return;
+      const dx = e.clientX - this.lastPointer.x;
+      const dy = e.clientY - this.lastPointer.y;
+      this.lastPointer.x = e.clientX;
+      this.lastPointer.y = e.clientY;
+      this.flyYaw -= dx * 0.0042;
+      this.flyPitch = Math.max(-1.52, Math.min(1.52, this.flyPitch - dy * 0.0042));
+    });
+    window.addEventListener("pointerup", () => {
+      this.isDraggingLook = false;
+    });
+
+    // Mouse Wheel in Free-Fly -> Glide smoothly forward/backward along your gaze!
+    dom.addEventListener("wheel", e => {
+      if (!this.freeFly) return;
+      e.preventDefault();
+      this.camFlight = null;
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).normalize();
+      const step = -Math.sign(e.deltaY) * 2.8;
+      this.camera.position.addScaledVector(forward, step);
+      this.camera.position.y = Math.max(0.95, Math.min(155, this.camera.position.y));
+    }, { passive: false });
+
+    // Double-Click Anywhere on the 3D Scene -> Fly Straight Into That Nook!
+    dom.addEventListener("dblclick", e => {
+      const rect = dom.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      this.raycaster.setFromCamera(ndc, this.camera);
+      const hits = this.raycaster.intersectObjects(this.cityGroup.children, true);
+      const valid = hits.find(h => h.object && h.object.isMesh && h.distance > 1.2 && h.distance < 220);
+      if (valid) {
+        this.flyToWorldPoint(valid.point);
+      }
+    });
   }
 
-  // Smooth Cinematic Camera Presets + Grand 5-Village Valley Walkthrough
+  // Smooth Cinematic Camera Presets + Grand 5-Village Valley Walkthrough + Top-Down God View
   flyToPreset(presetName) {
+    if (this.freeFly && presetName !== "godview") {
+      this.setFreeFly(false);
+    }
     this.walkthroughActive = false;
     this.autoRotate = false;
 
@@ -3101,7 +3366,7 @@ class ChristmasCity3D {
           new THREE.Vector3(-14.0, 11.5, -42.0), // Approaching Santa's Workshop & Polar Express Station
           new THREE.Vector3(24.0, 12.0, -34.0),  // Crossing Polar Express track to East Fairground
           new THREE.Vector3(44.0, 11.0, 20.0),   // Admiring glowing Ferris Wheel & Campfires
-          new THREE.Vector3(22.0, 32.0, 92.0)    // Rising to Grand 5-Village Panorama
+          new THREE.Vector3(6.0, 36.0, 106.0)    // Rising to Grand 5-Village Panorama
         ]);
         this.walkLookCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(0.0, 5.2, 47.0),
@@ -3112,7 +3377,7 @@ class ChristmasCity3D {
           new THREE.Vector3(0.0, 3.8, -56.0),
           new THREE.Vector3(56.0, 6.5, -1.0),
           new THREE.Vector3(56.0, 6.5, -1.0),
-          new THREE.Vector3(0.0, 4.0, 6.0)
+          new THREE.Vector3(2.0, 4.0, 2.0)
         ]);
       }
       return;
@@ -3120,6 +3385,7 @@ class ChristmasCity3D {
 
     const presets = {
       overview:   { pos: new THREE.Vector3(6.0, 36.0, 106.0),   target: new THREE.Vector3(2.0, 4.0, 2.0) },
+      godview:    { pos: new THREE.Vector3(0.0, 118.0, 24.0),   target: new THREE.Vector3(0.0, 0.0, -2.0) },
       archway:    { pos: new THREE.Vector3(0.0, 5.4, 62.5),     target: new THREE.Vector3(0.0, 5.0, 34.0) },
       plaza:      { pos: new THREE.Vector3(-11.5, 7.0, 21.0),   target: new THREE.Vector3(0.5, 4.5, 0.0) },
       icelake:    { pos: new THREE.Vector3(-34.0, 11.5, 22.0),  target: new THREE.Vector3(-54.0, 2.2, 0.0) },
@@ -3128,6 +3394,23 @@ class ChristmasCity3D {
       cathedral:  { pos: new THREE.Vector3(4.0, 8.5, 6.5),      target: new THREE.Vector3(21.5, 6.0, -11.5) }
     };
     const p = presets[presetName] || presets.overview;
+
+    if (this.freeFly && presetName === "godview") {
+      const dir = p.target.clone().sub(p.pos).normalize();
+      this.camFlight = {
+        startPos: this.camera.position.clone(),
+        endPos: p.pos.clone(),
+        startYaw: this.flyYaw,
+        endYaw: Math.atan2(-dir.x, -dir.z),
+        startPitch: this.flyPitch,
+        endPitch: Math.asin(Math.max(-0.98, Math.min(0.98, dir.y))),
+        freeFlyFlight: true,
+        t: 0,
+        duration: 1.35
+      };
+      return;
+    }
+
     this.camFlight = {
       startPos: this.camera.position.clone(),
       endPos: p.pos.clone(),
@@ -3165,7 +3448,15 @@ class ChristmasCity3D {
       const raw = Math.min(1.0, this.camFlight.t);
       const ease = raw < 0.5 ? 4 * raw * raw * raw : 1 - Math.pow(-2 * raw + 2, 3) / 2;
       this.camera.position.lerpVectors(this.camFlight.startPos, this.camFlight.endPos, ease);
-      if (this.controls) {
+      if (this.camFlight.freeFlyFlight) {
+        let dyaw = this.camFlight.endYaw - this.camFlight.startYaw;
+        while (dyaw > Math.PI) dyaw -= TAU;
+        while (dyaw < -Math.PI) dyaw += TAU;
+        this.flyYaw = this.camFlight.startYaw + dyaw * ease;
+        this.flyPitch = this.camFlight.startPitch + (this.camFlight.endPitch - this.camFlight.startPitch) * ease;
+        this.camera.rotation.order = "YXZ";
+        this.camera.rotation.set(this.flyPitch, this.flyYaw, 0);
+      } else if (this.controls) {
         this.controls.target.lerpVectors(this.camFlight.startTarget, this.camFlight.endTarget, ease);
       }
       if (raw >= 1.0) this.camFlight = null;
@@ -3179,11 +3470,12 @@ class ChristmasCity3D {
     this.lastFrameTime = now;
     this.time += dt;
 
-    if (this.autoRotate && this.cityGroup && !this.walkthroughActive) {
+    if (this.autoRotate && this.cityGroup && !this.walkthroughActive && !this.freeFly) {
       this.cityGroup.rotation.y += this.rotSpeed * (dt * 60);
     }
     this.updateCameraFlight(dt);
-    if (this.controls) this.controls.update();
+    this.updateFreeMovement(dt);
+    if (this.controls && !this.freeFly) this.controls.update();
     this.updateSnow();
     this.updateVillagers();
     this.updateSmoke();

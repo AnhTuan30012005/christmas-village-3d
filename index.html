@@ -141,6 +141,54 @@
       filter: brightness(1.12);
       transform: translateY(-1px);
     }
+    .g-btn.god-btn {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.22), rgba(16, 185, 129, 0.22));
+      border-color: rgba(56, 189, 248, 0.35);
+      color: #bae6fd;
+      font-weight: 600;
+    }
+    .g-btn.god-btn.active {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.85), rgba(16, 185, 129, 0.85));
+      border-color: rgba(186, 230, 253, 0.75);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+    }
+
+    /* God-Mode / Free-Roam Live HUD Pill (Top-Center) */
+    .god-hud {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      font-size: 0.76rem;
+      color: #e0f2fe;
+      border-color: rgba(56, 189, 248, 0.42);
+      max-width: calc(100vw - 380px);
+    }
+    .god-hud.visible {
+      display: inline-flex;
+    }
+    .god-zone {
+      font-weight: 600;
+      color: #fde68a;
+      white-space: nowrap;
+    }
+    .god-alt {
+      color: #7dd3fc;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .god-keys {
+      color: rgba(226, 232, 240, 0.78);
+      font-size: 0.72rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .g-divider {
       width: 1px;
@@ -249,6 +297,14 @@
       <span class="brand-name">Christmas Village 3D</span>
     </div>
 
+    <!-- Top-Center God-Mode / Free-Roam Live Compass HUD -->
+    <div class="glass-pill god-hud" id="god-hud">
+      <span class="god-zone" id="god-zone">🎄 Quảng Trường Cây Thông</span>
+      <span class="god-alt" id="god-alt">Cao: 36.0m</span>
+      <div class="g-divider"></div>
+      <span class="god-keys">WASD bay · Space/Q lên xuống · Shift nhanh</span>
+    </div>
+
     <!-- Top-Right Action Pill -->
     <div class="glass-pill top-actions">
       <button class="g-btn" id="btn-audio" title="Bật/Tắt nhạc Giáng sinh">
@@ -263,10 +319,13 @@
     </div>
 
     <!-- Subtle Navigation Hint -->
-    <div class="hint-badge">Kéo chuột để xoay 360° · Cuộn để phóng to · Chọn góc nhìn bên dưới</div>
+    <div class="hint-badge" id="nav-hint">Kéo chuột xoay 360° · Nhấp đúp vào bất kỳ ngôi nhà nào để bay sát tới · WASD di chuyển · Phím F bật Góc Nhìn Thượng Đế</div>
 
     <!-- Bottom Cinematic Camera & Control Dock -->
     <div class="glass-pill bottom-dock">
+      <button class="g-btn god-btn" id="btn-freefly" title="Góc Nhìn Thượng Đế (Phím F): bay tự do vào mọi ngóc ngách">👁 Tự Do</button>
+      <button class="g-btn cam-preset" data-preset="godview" title="Nhìn thẳng từ đỉnh trời bao quát cả 5 làng (Phím G)">🦅 Đỉnh Trời</button>
+      <div class="g-divider"></div>
       <button class="g-btn active cam-preset" data-preset="overview">🏔 Toàn Cảnh</button>
       <button class="g-btn cam-preset" data-preset="archway">⛩ Cổng Chào</button>
       <button class="g-btn cam-preset" data-preset="plaza">🎄 Quảng Trường</button>
@@ -324,6 +383,34 @@
 
       // Camera Preset Buttons (Smooth Fly-To & Walkthrough)
       const presetBtns = document.querySelectorAll(".cam-preset");
+      const btnFreeFly = document.getElementById("btn-freefly");
+      const godHud = document.getElementById("god-hud");
+      const godZone = document.getElementById("god-zone");
+      const godAlt = document.getElementById("god-alt");
+      const navHint = document.getElementById("nav-hint");
+
+      const syncFreeFlyUI = active => {
+        btnFreeFly.classList.toggle("active", active);
+        godHud.classList.toggle("visible", active);
+        navHint.textContent = active
+          ? "Chế độ Thượng Đế đang bật · WASD bay · Kéo chuột nhìn 360° · Cuộn chuột tiến/lùi · Space/E lên · Q/C xuống · Phím F để thoát"
+          : "Kéo chuột xoay 360° · Nhấp đúp vào bất kỳ ngôi nhà nào để bay sát tới · WASD di chuyển · Phím F bật Góc Nhìn Thượng Đế";
+        if (active) {
+          presetBtns.forEach(b => b.classList.remove("active"));
+          document.getElementById("btn-autorotate").classList.remove("active");
+        }
+      };
+
+      cityApp.onModeChange = syncFreeFlyUI;
+      cityApp.onHudUpdate = info => {
+        if (godZone) godZone.textContent = info.zone;
+        if (godAlt) godAlt.textContent = `Cao: ${info.alt}m`;
+      };
+
+      btnFreeFly.addEventListener("click", () => {
+        cityApp.toggleFreeFly();
+      });
+
       presetBtns.forEach(btn => {
         btn.addEventListener("click", () => {
           const preset = btn.dataset.preset;
