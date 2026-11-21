@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Merry Christmas 2026 — 3D ASCII Tree & Holiday Card</title>
+  <title>💌 Bạn có một tấm thiệp Giáng Sinh 2026</title>
+  <meta name="description" content="Một món quà nhỏ lung linh kèm cây thông ASCII 3D phát sáng và tấm thiệp Giáng Sinh ấm áp gửi đến bạn.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="💌 Bạn có một tấm thiệp Giáng Sinh 2026 ✦">
+  <meta property="og:description" content="Chạm để mở cây thông Giáng Sinh phát sáng và phong thư kỷ niệm ấm áp dành riêng cho bạn.">
+  <meta property="og:image" content="https://anhtuan30012005.github.io/christmas-village-3d/card-photo.jpg">
+  <meta property="og:url" content="https://anhtuan30012005.github.io/christmas-village-3d/ascii-tree.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Great+Vibes&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -185,10 +193,18 @@
       position: fixed;
       top: calc(16px + var(--safe-top));
       right: clamp(14px, 2.6vw, 28px);
+      text-align: right;
       color: #ff758f;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       text-shadow: 0 0 14px rgba(255, 117, 143, 0.55);
+    }
+    .hud-countdown {
+      margin-top: 2px;
+      font-size: 0.84em;
+      font-weight: 500;
+      color: rgba(253, 230, 138, 0.78);
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.35);
     }
 
     .hud-bottom-left {
@@ -910,18 +926,18 @@
     .parchment-seal .s-icon { font-size: 16px; }
     .parchment-seal .s-yr   { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; margin-top: 2px; }
 
-    /* Staggered poetic reveal for card contents */
+    /* Crisp, immediate staggered reveal for card contents */
     .reveal-item {
       opacity: 0;
-      transform: translateY(14px);
-      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translateY(10px);
+      transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .card-shell.revealed .reveal-item { opacity: 1; transform: translateY(0); }
-    .card-shell.revealed .reveal-item:nth-child(1) { transition-delay: 0.12s; }
-    .card-shell.revealed .reveal-item:nth-child(2) { transition-delay: 0.24s; }
-    .card-shell.revealed .reveal-item:nth-child(3) { transition-delay: 0.38s; }
-    .card-shell.revealed .reveal-item:nth-child(4) { transition-delay: 0.54s; }
-    .card-shell.revealed .reveal-item:nth-child(5) { transition-delay: 0.68s; }
+    .card-shell.revealed .reveal-item:nth-child(1) { transition-delay: 0.05s; }
+    .card-shell.revealed .reveal-item:nth-child(2) { transition-delay: 0.12s; }
+    .card-shell.revealed .reveal-item:nth-child(3) { transition-delay: 0.19s; }
+    .card-shell.revealed .reveal-item:nth-child(4) { transition-delay: 0.26s; }
+    .card-shell.revealed .reveal-item:nth-child(5) { transition-delay: 0.33s; }
 
     /* Ultra-Discreet External Bar Below the Luxury Card (Zero clutter inside the parchment!) */
     .card-outside-actions {
@@ -1062,7 +1078,10 @@
 
     <!-- Clean Terminal Telemetry -->
     <div class="hud">
-      <div class="hud-time" id="hud-time">t 00.00s</div>
+      <div class="hud-time">
+        <div id="hud-time">t 00.00s</div>
+        <div class="hud-countdown" id="hud-countdown"></div>
+      </div>
 
       <div class="hud-bottom-left">
         <div class="tag">@999.2006.01.19 · 2026</div>
@@ -1178,6 +1197,7 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
 
         <!-- Ultra-Discreet External Bar Below Card -->
         <div class="card-outside-actions">
+          <button class="c-btn gold" id="btn-download-card">📥 Lưu ảnh thiệp</button>
           <button class="c-btn" id="btn-toggle-editor">✎ Đổi ảnh & lời chúc</button>
         </div>
       </div>
@@ -1278,6 +1298,8 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         this.snow = [];
         this.auraDust = [];
         this.sparkleTargets = [];
+        this.tapSparks = [];
+        this.ptrDownPos = { x: 0, y: 0 };
 
         this.zBuf = null;
         this.chBuf = null;
@@ -1653,6 +1675,8 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
           this.dragging = true;
           this.lastPtr.x = e.clientX;
           this.lastPtr.y = e.clientY;
+          this.ptrDownPos.x = e.clientX;
+          this.ptrDownPos.y = e.clientY;
         });
         window.addEventListener("pointermove", e => {
           if (!this.dragging || e.pointerType === "touch") return;
@@ -1663,7 +1687,13 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
           this.yaw += dx * 0.0085;
           this.pitch = Math.max(-0.26, Math.min(0.85, this.pitch + dy * 0.0065));
         });
-        window.addEventListener("pointerup", () => { this.dragging = false; });
+        window.addEventListener("pointerup", e => {
+          if (this.dragging && e.pointerType !== "touch") {
+            const moved = Math.hypot(e.clientX - this.ptrDownPos.x, e.clientY - this.ptrDownPos.y);
+            if (moved < 7) this.spawnTapSparkles(e.clientX, e.clientY);
+          }
+          this.dragging = false;
+        });
 
         c.addEventListener("wheel", e => {
           e.preventDefault();
@@ -1677,6 +1707,8 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
             this.dragging = true;
             this.lastPtr.x = e.touches[0].clientX;
             this.lastPtr.y = e.touches[0].clientY;
+            this.ptrDownPos.x = e.touches[0].clientX;
+            this.ptrDownPos.y = e.touches[0].clientY;
           } else if (e.touches.length === 2) {
             this.dragging = false;
             this.pinchDist = Math.hypot(
@@ -1709,10 +1741,35 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
           }
         }, { passive: false });
 
-        c.addEventListener("touchend", () => {
+        c.addEventListener("touchend", e => {
+          if (this.dragging && e.changedTouches && e.changedTouches.length === 1) {
+            const tEnd = e.changedTouches[0];
+            const moved = Math.hypot(tEnd.clientX - this.ptrDownPos.x, tEnd.clientY - this.ptrDownPos.y);
+            if (moved < 10) this.spawnTapSparkles(tEnd.clientX, tEnd.clientY);
+          }
           this.dragging = false;
           this.pinchDist = 0;
         }, { passive: true });
+      }
+
+      spawnTapSparkles(x, y) {
+        const cols = [[255, 228, 96], [255, 192, 68], [130, 232, 255], [255, 118, 152], [255, 250, 224]];
+        const glyphs = ["✦", "✧", "*", "·"];
+        for (let i = 0; i < 18; i++) {
+          const a = (i / 18) * TAU + (Math.random() - 0.5) * 0.35;
+          const spd = 48 + Math.random() * 110;
+          this.tapSparks.push({
+            x, y,
+            vx: Math.cos(a) * spd,
+            vy: Math.sin(a) * spd - 24,
+            life: 1.0,
+            decay: 0.9 + Math.random() * 0.55,
+            col: cols[i % cols.length],
+            glyph: glyphs[i % glyphs.length],
+            flare: i % 5 === 0
+          });
+        }
+        if (this.tapSparks.length > 140) this.tapSparks.splice(0, this.tapSparks.length - 140);
       }
 
       replay() {
@@ -2075,6 +2132,29 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
           this.drawLensFlare(ctx, sx, sy2, 12 + intensity * 14, lc[0], lc[1], lc[2], intensity * 0.78);
         }
 
+        // 6B. Interactive Tap/Click Golden Stardust Bursts on Sky
+        if (this.tapSparks.length) {
+          ctx.font = `700 ${Math.max(11, this.fontSize + 2)}px 'JetBrains Mono', monospace`;
+          for (let i = this.tapSparks.length - 1; i >= 0; i--) {
+            const sp = this.tapSparks[i];
+            sp.life -= sp.decay * dt;
+            if (sp.life <= 0) {
+              this.tapSparks.splice(i, 1);
+              continue;
+            }
+            sp.x += sp.vx * dt;
+            sp.y += sp.vy * dt;
+            sp.vy += 95 * dt;
+            sp.vx *= 0.96;
+            const a = Math.pow(sp.life, 1.3);
+            ctx.fillStyle = `rgba(${sp.col[0]},${sp.col[1]},${sp.col[2]},${a.toFixed(2)})`;
+            ctx.fillText(sp.glyph, sp.x, sp.y);
+            if (sp.flare && a > 0.35) {
+              this.drawLensFlare(ctx, sp.x + 4, sp.y + 4, 14 * a, sp.col[0], sp.col[1], sp.col[2], a * 0.7);
+            }
+          }
+        }
+
         ctx.restore();
 
         // 7. Telemetry HUD
@@ -2138,6 +2218,56 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
       if (params.get("sign")) cardSignEl.textContent = params.get("sign");
       if (params.get("cap"))  cardCapEl.textContent = params.get("cap");
       if (params.get("img"))  cardImgEl.src = params.get("img");
+
+      // Recipient Gift Mode: hide editor button when opening a personalized shared link (unless ?edit=1)
+      const isRecipientGiftLink = (params.has("to") || params.has("msg")) && params.get("edit") !== "1";
+      const btnToggleEditor = document.getElementById("btn-toggle-editor");
+      if (isRecipientGiftLink && btnToggleEditor) {
+        btnToggleEditor.style.display = "none";
+      }
+
+      // Live Subtle Christmas Countdown in Top-Right Telemetry
+      const hudCountdown = document.getElementById("hud-countdown");
+      if (hudCountdown) {
+        const now = new Date();
+        const yr = now.getFullYear();
+        const xmas = new Date(yr, 11, 25, 0, 0, 0);
+        const diffMs = xmas - now;
+        const days = Math.ceil(diffMs / 86400000);
+        if (now.getMonth() === 11 && (now.getDate() === 24 || now.getDate() === 25)) {
+          hudCountdown.textContent = "✦ Merry Christmas ✦";
+        } else if (days > 0) {
+          hudCountdown.textContent = `Noël ${yr} · Còn ${days} ngày`;
+        } else {
+          const nextXmas = new Date(yr + 1, 11, 25, 0, 0, 0);
+          hudCountdown.textContent = `Noël ${yr + 1} · Còn ${Math.ceil((nextXmas - now) / 86400000)} ngày`;
+        }
+      }
+
+      // Delicate Crystal Harp/Bell Chime when Wax Seal Breaks (Web Audio, zero external file needed)
+      function playMagicChime() {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          const ctx = new AC();
+          const notes = [1046.5, 1318.5, 1567.98, 1975.53, 2349.32]; // C6 E6 G6 B6 D7 celestial chime
+          const t0 = ctx.currentTime + 0.02;
+          notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = i % 2 === 0 ? "sine" : "triangle";
+            osc.frequency.setValueAtTime(freq, t0 + i * 0.085);
+            gain.gain.setValueAtTime(0.0001, t0 + i * 0.085);
+            gain.gain.linearRampToValueAtTime(0.065, t0 + i * 0.085 + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.085 + 1.05);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t0 + i * 0.085);
+            osc.stop(t0 + i * 0.085 + 1.1);
+          });
+          setTimeout(() => { if (ctx.state !== "closed") ctx.close(); }, 1800);
+        } catch (_) {}
+      }
 
       const showInvitation = () => {
         cardInvite.classList.add("show");
@@ -2208,10 +2338,11 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
 
         // Step 1: Envelope rises in
         cardTimers.push(setTimeout(() => envelope.classList.add("entered"), 40));
-        // Step 2: Wax seal bursts into golden sparkles & top flap flips open!
+        // Step 2: Wax seal bursts into golden sparkles, crystal chime rings & top flap flips open!
         cardTimers.push(setTimeout(() => {
           envelope.classList.add("opened");
           emitSparkleBurst();
+          playMagicChime();
         }, 560));
         // Step 3: Letter slides out of envelope pocket
         cardTimers.push(setTimeout(() => envelope.classList.add("risen"), 1020));
@@ -2243,6 +2374,157 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         cardInvite.classList.remove("show");
         app.replay();
       });
+
+      // High-Res 1400x820 Keepsake PNG Card Exporter ("📥 Lưu ảnh thiệp")
+      function downloadKeepsakeCardPNG() {
+        const W = 1400, H = 820;
+        const c = document.createElement("canvas");
+        c.width = W; c.height = H;
+        const g = c.getContext("2d");
+
+        // Left Page: Royal Velvet Burgundy
+        const lGrad = g.createRadialGradient(350, 320, 40, 350, 410, 520);
+        lGrad.addColorStop(0, "#681326");
+        lGrad.addColorStop(0.65, "#2b0711");
+        lGrad.addColorStop(1, "#160308");
+        g.fillStyle = lGrad;
+        g.fillRect(0, 0, W / 2, H);
+
+        // Right Page: Handmade Ivory-Cream Parchment
+        const rGrad = g.createLinearGradient(W / 2, 0, W, H);
+        rGrad.addColorStop(0, "#fffdf8");
+        rGrad.addColorStop(0.58, "#faf1de");
+        rGrad.addColorStop(1, "#f1e2c2");
+        g.fillStyle = rGrad;
+        g.fillRect(W / 2, 0, W / 2, H);
+
+        // Center book-fold spine shadow
+        const sp = g.createLinearGradient(W / 2 - 22, 0, W / 2 + 22, 0);
+        sp.addColorStop(0, "rgba(0,0,0,0)");
+        sp.addColorStop(0.5, "rgba(0,0,0,0.32)");
+        sp.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = sp;
+        g.fillRect(W / 2 - 22, 0, 44, H);
+
+        // Outer & Inner Gold Foil Borders
+        g.strokeStyle = "rgba(232,190,104,0.75)";
+        g.lineWidth = 3;
+        g.strokeRect(2, 2, W - 4, H - 4);
+        g.strokeStyle = "rgba(232,190,104,0.40)";
+        g.lineWidth = 1.5;
+        g.strokeRect(26, 26, W / 2 - 52, H - 52);
+        g.strokeStyle = "rgba(184,134,48,0.42)";
+        g.strokeRect(W / 2 + 26, 26, W / 2 - 52, H - 52);
+
+        // Left Page Crest
+        g.fillStyle = "rgba(253,230,138,0.88)";
+        g.font = "600 18px 'Cormorant Garamond', Georgia, serif";
+        g.textAlign = "center";
+        g.fillText("✦  ÉDITION DE NOËL · 2026  ✦", W / 4, 108);
+
+        // Double Gold-Beveled Frame & Keepsake Photo
+        const fx = 92, fy = 152, fw = 516, fh = 412;
+        const fGrad = g.createLinearGradient(fx, fy, fx + fw, fy + fh);
+        fGrad.addColorStop(0, "#f7de9c");
+        fGrad.addColorStop(0.45, "#b9832c");
+        fGrad.addColorStop(0.65, "#fceab2");
+        fGrad.addColorStop(1, "#9c6a1f");
+        g.fillStyle = fGrad;
+        g.fillRect(fx, fy, fw, fh);
+        g.fillStyle = "#fdf8ee";
+        g.fillRect(fx + 14, fy + 14, fw - 28, fh - 28);
+
+        if (cardImgEl.complete && cardImgEl.naturalWidth > 0) {
+          const ix = fx + 26, iy = fy + 26, iw = fw - 52, ih = 294;
+          const imgRatio = cardImgEl.naturalWidth / cardImgEl.naturalHeight;
+          const boxRatio = iw / ih;
+          let sx = 0, sy = 0, sw = cardImgEl.naturalWidth, sh = cardImgEl.naturalHeight;
+          if (imgRatio > boxRatio) {
+            sw = sh * boxRatio;
+            sx = (cardImgEl.naturalWidth - sw) / 2;
+          } else {
+            sh = sw / boxRatio;
+            sy = (cardImgEl.naturalHeight - sh) / 2;
+          }
+          g.drawImage(cardImgEl, sx, sy, sw, sh, ix, iy, iw, ih);
+        }
+
+        // Polaroid Caption
+        g.fillStyle = "#5c2824";
+        g.font = "italic 600 26px 'Cormorant Garamond', Georgia, serif";
+        g.fillText(cardCapEl.textContent, W / 4, fy + fh - 38);
+        g.fillStyle = "rgba(244,206,122,0.85)";
+        g.font = "22px Georgia, serif";
+        g.fillText("────  ✦  ────", W / 4, 650);
+
+        // Right Page Content
+        const rx = W / 2 + 78;
+        const maxW = W / 2 - 156;
+        g.textAlign = "center";
+        g.fillStyle = "#a67422";
+        g.font = "20px Georgia, serif";
+        g.fillText("✦  ❄  ✦", W * 0.75, 118);
+
+        g.fillStyle = "#8f1629";
+        g.font = "400 72px 'Great Vibes', Georgia, cursive";
+        g.fillText("Merry Christmas", W * 0.75, 206);
+
+        g.textAlign = "left";
+        g.fillStyle = "#3d1c15";
+        g.font = "700 36px 'Cormorant Garamond', Georgia, serif";
+        g.fillText(cardToEl.textContent, rx, 286);
+
+        // Word-wrap heartfelt message cleanly
+        g.fillStyle = "#3c261d";
+        g.font = "500 28px 'Cormorant Garamond', Georgia, serif";
+        let curY = 348;
+        const paragraphs = cardBodyEl.textContent.split("\n");
+        paragraphs.forEach(para => {
+          if (!para.trim()) { curY += 22; return; }
+          const words = para.split(" ");
+          let line = "";
+          for (const w of words) {
+            const test = line ? `${line} ${w}` : w;
+            if (g.measureText(test).width > maxW && line) {
+              g.fillText(line, rx, curY);
+              line = w;
+              curY += 42;
+            } else {
+              line = test;
+            }
+          }
+          if (line) { g.fillText(line, rx, curY); curY += 42; }
+        });
+
+        // Signature + Crimson Wax Seal Stamp
+        g.fillStyle = "#8f1629";
+        g.font = "italic 700 32px 'Cormorant Garamond', Georgia, serif";
+        g.fillText(cardSignEl.textContent, rx, Math.min(725, Math.max(curY + 32, 650)));
+
+        const scx = W - 122, scy = H - 118;
+        const sGrad = g.createRadialGradient(scx - 10, scy - 10, 4, scx, scy, 44);
+        sGrad.addColorStop(0, "#c92a42");
+        sGrad.addColorStop(0.65, "#8f1629");
+        sGrad.addColorStop(1, "#540a16");
+        g.fillStyle = sGrad;
+        g.beginPath(); g.arc(scx, scy, 44, 0, TAU); g.fill();
+        g.strokeStyle = "rgba(235,190,96,0.8)";
+        g.lineWidth = 3;
+        g.stroke();
+        g.textAlign = "center";
+        g.fillStyle = "#fde68a";
+        g.font = "24px Georgia, serif";
+        g.fillText("❄", scx, scy + 2);
+        g.font = "700 14px 'Cormorant Garamond', serif";
+        g.fillText("2026", scx, scy + 24);
+
+        const a = document.createElement("a");
+        a.download = `thiep-giang-sinh-2026-${Date.now()}.png`;
+        a.href = c.toDataURL("image/png");
+        a.click();
+      }
+
+      document.getElementById("btn-download-card").addEventListener("click", downloadKeepsakeCardPNG);
 
       // Inline Quick Personalizer (Swap Photo from Device & Edit Message)
       const editor = document.getElementById("card-editor");
