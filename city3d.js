@@ -423,11 +423,11 @@ class ChristmasCity3D {
   initScene() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x02040a);
-    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0108);
+    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0062);
 
-    // Heroic 3/4 cinematic perspective: leading line flows through Welcome Archway -> Boulevard -> Plaza -> Tree -> Cathedral
-    this.camera = new THREE.PerspectiveCamera(42, this.width / this.height, 0.1, 320);
-    this.camera.position.set(10.5, 13.8, 46.2);
+    // Grand 2x Heroic 3/4 panorama: Welcome Archway -> Boulevard -> Double-Ring Village -> Tree -> Mountains
+    this.camera = new THREE.PerspectiveCamera(44, this.width / this.height, 0.1, 460);
+    this.camera.position.set(17.5, 22.5, 74.0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -449,15 +449,15 @@ class ChristmasCity3D {
     const ambient = new THREE.AmbientLight(0x111c30, 0.34);
     this.scene.add(ambient);
 
-    // Cool moonlight casting crisp winter shadows across snow & plaza
-    const moon = new THREE.DirectionalLight(0x7ca2d6, 0.64);
-    moon.position.set(-14, 24, 16);
+    // Cool moonlight casting crisp winter shadows across the expanded 2x village
+    const moon = new THREE.DirectionalLight(0x7ca2d6, 0.68);
+    moon.position.set(-24, 38, 28);
     moon.castShadow = true;
     moon.shadow.mapSize.width = 2048;
     moon.shadow.mapSize.height = 2048;
     moon.shadow.camera.near = 1;
-    moon.shadow.camera.far = 75;
-    const d = 20;
+    moon.shadow.camera.far = 140;
+    const d = 44;
     moon.shadow.camera.left = -d;
     moon.shadow.camera.right = d;
     moon.shadow.camera.top = d;
@@ -588,18 +588,19 @@ class ChristmasCity3D {
     this.buildBackgroundMoon();
   }
 
-  // 1. Wide Spacious Cobblestone Circular Plaza, Circular Snow Ring & Curved Wooden Fence
+  // 1. Grand 2x Cobblestone Circular Town Basin, Radial-Fade Snow Valley & Curved Fence
   buildCobblestonePlaza() {
-    // Wide circular textured cobblestone plaza (r = 19.4)
+    // 2x Expanded circular textured cobblestone basin (r = 36.5) with scaled tiling
+    this.mat.cobble.map.repeat.set(16, 16);
     const plaza = new THREE.Mesh(
-      new THREE.CylinderGeometry(19.4, 19.4, 0.3, 64),
+      new THREE.CylinderGeometry(36.5, 36.5, 0.3, 72),
       this.mat.cobble
     );
     plaza.position.y = -0.15;
     plaza.receiveShadow = true;
     this.cityGroup.add(plaza);
 
-    // Seamless Radial-Fade Winter Snow Valley Floor (dissolves invisibly into midnight horizon)
+    // Seamless Radial-Fade Winter Snow Valley Floor (r = 210, dissolves invisibly into midnight horizon)
     const valleyTex = TextureForge.createSnowValleyGround();
     const valleyMat = new THREE.MeshStandardMaterial({
       map: valleyTex,
@@ -607,7 +608,7 @@ class ChristmasCity3D {
       metalness: 0.02
     });
     const outerSnow = new THREE.Mesh(
-      new THREE.CircleGeometry(118, 64),
+      new THREE.CircleGeometry(210, 72),
       valleyMat
     );
     outerSnow.rotation.x = -Math.PI / 2;
@@ -615,9 +616,31 @@ class ChristmasCity3D {
     outerSnow.receiveShadow = true;
     this.cityGroup.add(outerSnow);
 
-    // Low curved rustic wooden fence around the wide inner plaza ring (r = 8.4)
-    const fenceR = 8.4;
-    const totalPosts = 64;
+    // Subtle decorative snowy garden rings between Ring 1 and Ring 2 (spacious zones for future scenes!)
+    const midSnowRing = new THREE.Mesh(
+      new THREE.RingGeometry(25.2, 29.8, 64),
+      new THREE.MeshStandardMaterial({ color: 0xcedcf0, roughness: 0.92 })
+    );
+    midSnowRing.rotation.x = -Math.PI / 2;
+    midSnowRing.position.y = 0.015;
+    midSnowRing.receiveShadow = true;
+    this.cityGroup.add(midSnowRing);
+
+    // 4 Cardinal Cobblestone Avenues cutting cleanly across the snowy mid-ring (N, S, E, W)
+    const crossRoadMat = this.mat.cobble;
+    const nsRoad = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.06, 68.0), crossRoadMat);
+    nsRoad.position.set(0, 0.01, 0);
+    nsRoad.receiveShadow = true;
+    this.cityGroup.add(nsRoad);
+
+    const ewRoad = new THREE.Mesh(new THREE.BoxGeometry(68.0, 0.06, 5.2), crossRoadMat);
+    ewRoad.position.set(0, 0.01, 0);
+    ewRoad.receiveShadow = true;
+    this.cityGroup.add(ewRoad);
+
+    // Low curved rustic wooden fence around the grand central plaza (r = 11.4)
+    const fenceR = 11.4;
+    const totalPosts = 76;
     for (let i = 0; i < totalPosts; i++) {
       const a = (i / totalPosts) * TAU;
       // 4 clean walkway openings (East/Cathedral, South/Front, West, North)
@@ -646,10 +669,11 @@ class ChristmasCity3D {
     }
   }
 
-  // 2. Grand Central Christmas Tree (Lush Voxel Foliage + Dotted Golden Spiral + 8-Ray Star)
+  // 2. Grand Central Christmas Tree (Scaled 1.25x to command the 2x Grand Square)
   buildCentralTree() {
     const grp = new THREE.Group();
     grp.position.set(0, 0, 0);
+    grp.scale.setScalar(1.25);
     this.cityGroup.add(grp);
 
     // Circular raised stone planter dais (exact match to photo)
@@ -793,15 +817,16 @@ class ChristmasCity3D {
     });
   }
 
-  // 3. Majestic Gothic Twin-Spire Cathedral (Positioned on the wide circular ring facing center)
+  // 3. Majestic Gothic Twin-Spire Cathedral (Positioned on Ring 1 facing center, 1.22x heroic scale)
   buildGothicCathedral() {
     const grp = new THREE.Group();
     const angle = -28 * (Math.PI / 180);
-    const radius = 18.2;
+    const radius = 24.8;
     const cx = Math.cos(angle) * radius;
     const cz = Math.sin(angle) * radius;
     grp.position.set(cx, 0, cz);
     grp.rotation.y = Math.atan2(-cx, -cz);
+    grp.scale.setScalar(1.22);
     this.cityGroup.add(grp);
 
     const w = 4.6, d = 7.4, h = 5.0;
@@ -907,15 +932,16 @@ class ChristmasCity3D {
     });
   }
 
-  // 4. Alpine Stone Clock Tower (Positioned on the wide circular ring facing center)
+  // 4. Alpine Stone Clock Tower (Positioned on Ring 1 facing center, 1.20x heroic scale)
   buildClockTower() {
     const grp = new THREE.Group();
-    const angle = -150 * (Math.PI / 180);
-    const radius = 17.4;
+    const angle = -152 * (Math.PI / 180);
+    const radius = 23.8;
     const tx = Math.cos(angle) * radius;
     const tz = Math.sin(angle) * radius;
     grp.position.set(tx, 0, tz);
     grp.rotation.y = Math.atan2(-tx, -tz);
+    grp.scale.setScalar(1.20);
     this.cityGroup.add(grp);
 
     const w = 2.4, d = 2.4, h = 6.8;
@@ -1078,32 +1104,56 @@ class ChristmasCity3D {
     }
   }
 
-  // 5. Surrounding European Townhouses — Wide 360° Circular Ring (Open South Gateway for Boulevard)
+  // 5. Grand Double-Ring European Townhouses (2x Village Footprint: Ring 1 R=22.8 + Ring 2 R=33.4)
   buildTownhouses() {
-    const ringSlots = [
-      // Back-Right Arc (between North and Cathedral at -28°)
-      { deg:  -48, r: 17.0, w: 3.3, d: 2.7, h: 3.0, rh: 1.8, stone: false, smoke: true  },
-      { deg:  -64, r: 16.8, w: 3.4, d: 2.7, h: 2.8, rh: 1.7, stone: true,  smoke: false },
-      { deg:  -80, r: 16.8, w: 3.3, d: 2.7, h: 3.1, rh: 1.8, stone: false, smoke: true  },
-      { deg:  -96, r: 16.8, w: 3.4, d: 2.7, h: 2.9, rh: 1.7, stone: true,  smoke: false },
-      // Back-Left Arc (between North and Clock Tower at -150°)
-      { deg: -114, r: 16.8, w: 3.3, d: 2.7, h: 2.8, rh: 1.7, stone: false, smoke: true  },
-      { deg: -132, r: 17.0, w: 3.2, d: 2.6, h: 3.0, rh: 1.8, stone: true,  smoke: false },
-      // Left-Side & Left-Front Arc
-      { deg: -168, r: 17.0, w: 3.4, d: 2.8, h: 3.0, rh: 1.8, stone: false, smoke: true  },
-      { deg:  174, r: 17.0, w: 3.5, d: 2.8, h: 3.1, rh: 1.9, stone: true,  smoke: false },
-      { deg:  156, r: 17.0, w: 3.3, d: 2.7, h: 2.9, rh: 1.7, stone: false, smoke: true  },
-      { deg:  138, r: 17.0, w: 3.3, d: 2.7, h: 2.8, rh: 1.7, stone: true,  smoke: false },
-      { deg:  120, r: 17.0, w: 3.0, d: 2.5, h: 2.5, rh: 1.6, stone: false, smoke: false },
-      // Right-Side & Right-Front Arc
-      { deg:   -6, r: 17.1, w: 3.3, d: 2.7, h: 2.9, rh: 1.7, stone: false, smoke: false },
-      { deg:   12, r: 17.0, w: 3.5, d: 2.8, h: 3.1, rh: 1.8, stone: true,  smoke: true  },
-      { deg:   30, r: 17.0, w: 3.3, d: 2.7, h: 2.8, rh: 1.7, stone: false, smoke: false },
-      { deg:   48, r: 17.0, w: 3.2, d: 2.6, h: 2.6, rh: 1.6, stone: true,  smoke: false },
-      { deg:   64, r: 16.8, w: 3.0, d: 2.5, h: 2.4, rh: 1.5, stone: false, smoke: true  }
+    // RING 1: Inner Plaza Perimeter (R = 22.8, leaves 4 cardinal avenues + Cathedral at -28° + Clock Tower at -152°)
+    const ring1 = [
+      // Back-Right Arc
+      { deg:  -48, r: 22.8, w: 3.6, d: 2.9, h: 3.1, rh: 1.9, stone: false, smoke: true  },
+      { deg:  -62, r: 22.6, w: 3.5, d: 2.8, h: 2.9, rh: 1.8, stone: true,  smoke: false },
+      { deg:  -76, r: 22.6, w: 3.6, d: 2.8, h: 3.2, rh: 1.9, stone: false, smoke: true  },
+      // Back-Left Arc (skipping North avenue at -90°)
+      { deg: -104, r: 22.6, w: 3.5, d: 2.8, h: 3.0, rh: 1.8, stone: true,  smoke: false },
+      { deg: -118, r: 22.6, w: 3.6, d: 2.8, h: 2.9, rh: 1.8, stone: false, smoke: true  },
+      { deg: -133, r: 22.8, w: 3.4, d: 2.7, h: 3.1, rh: 1.9, stone: true,  smoke: false },
+      // Left-Side & South-West Arc (skipping West avenue at 180°)
+      { deg: -168, r: 22.8, w: 3.5, d: 2.8, h: 3.0, rh: 1.8, stone: false, smoke: true  },
+      { deg:  166, r: 22.8, w: 3.6, d: 2.9, h: 3.2, rh: 1.9, stone: true,  smoke: false },
+      { deg:  150, r: 22.8, w: 3.5, d: 2.8, h: 3.0, rh: 1.8, stone: false, smoke: true  },
+      { deg:  134, r: 22.8, w: 3.4, d: 2.7, h: 2.9, rh: 1.7, stone: true,  smoke: false },
+      { deg:  118, r: 22.6, w: 3.2, d: 2.6, h: 2.6, rh: 1.6, stone: false, smoke: false },
+      // Right-Side & South-East Arc (skipping East avenue at 0°)
+      { deg:   14, r: 22.8, w: 3.6, d: 2.9, h: 3.1, rh: 1.9, stone: true,  smoke: true  },
+      { deg:   30, r: 22.8, w: 3.5, d: 2.8, h: 2.9, rh: 1.8, stone: false, smoke: false },
+      { deg:   46, r: 22.8, w: 3.4, d: 2.7, h: 2.8, rh: 1.7, stone: true,  smoke: false },
+      { deg:   62, r: 22.6, w: 3.2, d: 2.6, h: 2.6, rh: 1.6, stone: false, smoke: true  }
     ];
 
-    ringSlots.forEach(s => {
+    // RING 2: Outer Residential District (R = 33.4, 24 houses creating a true sprawling 2x Christmas Town!)
+    const ring2Count = 30;
+    const ring2 = [];
+    for (let i = 0; i < ring2Count; i++) {
+      const deg = -180 + (i / ring2Count) * 360 + 6;
+      // Keep 4 cardinal avenues open (0°, -90°, ±180°, +90° South Boulevard)
+      const nearSouth = deg > 76 && deg < 104;
+      const nearNorth = deg > -98 && deg < -82;
+      const nearEast  = deg > -8 && deg < 8;
+      const nearWest  = deg > 172 || deg < -172;
+      if (nearSouth || nearNorth || nearEast || nearWest) continue;
+
+      ring2.push({
+        deg,
+        r: 33.2 + (i % 3) * 0.65,
+        w: 3.3 + (i % 3) * 0.35,
+        d: 2.7 + (i % 2) * 0.25,
+        h: 2.8 + (i % 4) * 0.32,
+        rh: 1.7 + (i % 3) * 0.20,
+        stone: i % 2 === 0,
+        smoke: i % 5 === 0
+      });
+    }
+
+    [...ring1, ...ring2].forEach(s => {
       const a = s.deg * (Math.PI / 180);
       const x = Math.cos(a) * s.r;
       const z = Math.sin(a) * s.r;
@@ -1118,27 +1168,33 @@ class ChristmasCity3D {
     });
   }
 
-  // 6. Red/White Striped Market Stalls & Foreground Snow-Roofed Gatehouse Booths
+  // 6. Red/White Striped Market Stalls & Plaza Gatehouse Booths (6 Stalls in 4 Quadrants)
   buildMarketStallsAndBooths() {
-    const stallAngles = [148, 128];
-    stallAngles.forEach(deg => {
-      const a = deg * (Math.PI / 180);
-      const r = 12.8;
-      const sx = Math.cos(a) * r;
-      const sz = Math.sin(a) * r;
+    const stallSlots = [
+      { deg: 148, r: 16.5 },
+      { deg: 132, r: 16.5 },
+      { deg:  46, r: 16.5 },
+      { deg:  30, r: 16.5 },
+      { deg: -64, r: 16.8 },
+      { deg: -116, r: 16.8 }
+    ];
+    stallSlots.forEach((slot, idx) => {
+      const a = slot.deg * (Math.PI / 180);
+      const sx = Math.cos(a) * slot.r;
+      const sz = Math.sin(a) * slot.r;
 
       const sGrp = new THREE.Group();
       sGrp.position.set(sx, 0, sz);
       sGrp.rotation.y = Math.atan2(-sx, -sz);
       this.cityGroup.add(sGrp);
 
-      const sw = 1.8, sd = 1.35, sh = 1.05;
+      const sw = 1.9, sd = 1.4, sh = 1.1;
       this.addBox(-sw / 2, 0, -sd / 2, sw, sh, sd, this.mat.woodMed, sGrp);
-      this.addBox(-sw / 2 + 0.14, 0.50, sd / 2 + 0.02, sw - 0.28, 0.45, 0.08, this.mat.window, sGrp);
+      this.addBox(-sw / 2 + 0.14, 0.50, sd / 2 + 0.02, sw - 0.28, 0.48, 0.08, this.mat.window, sGrp);
 
       [-sw / 2, sw / 2 - 0.1].forEach(px => {
         [-sd / 2, sd / 2 - 0.1].forEach(pz => {
-          this.addBox(px, sh, pz, 0.10, 0.72, 0.10, this.mat.woodDark, sGrp);
+          this.addBox(px, sh, pz, 0.10, 0.74, 0.10, this.mat.woodDark, sGrp);
         });
       });
 
@@ -1148,78 +1204,69 @@ class ChristmasCity3D {
         const sW = (sw + 0.2) / stripes;
         const m = s % 2 === 0 ? this.mat.red : this.mat.white;
         for (let l = 0; l < 5; l++) {
-          const ly = sh + 0.65 + l * 0.09;
-          const lSpan = (sd + 0.32) * (1 - l / 6.5);
+          const ly = sh + 0.66 + l * 0.09;
+          const lSpan = (sd + 0.34) * (1 - l / 6.5);
           this.addBox(bx, ly, -lSpan / 2, sW, 0.08, lSpan, m, sGrp);
         }
       }
-
-      const lgt = new THREE.PointLight(0xffaa28, 2.2, 6.0);
-      lgt.position.set(0, sh + 0.4, 0.3);
-      sGrp.add(lgt);
+      this.addGlow(0, sh + 0.4, 0.3, 2.2, sGrp, this.texGlowWarm, 0.50);
     });
 
-    // Two Cozy Low Snow-Roofed Booths flanking the wide South Boulevard Entrance
-    [68, 112].forEach(deg => {
+    // Two Cozy Low Snow-Roofed Gatehouse Booths flanking the South Boulevard Entrance
+    [72, 108].forEach(deg => {
       const a = deg * (Math.PI / 180);
-      const r = 13.6;
+      const r = 17.8;
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
       this.createCottage({
         x, z,
         rot: Math.atan2(-x, -z),
-        w: 2.1, d: 1.6, h: 1.45, rh: 1.15,
+        w: 2.3, d: 1.8, h: 1.55, rh: 1.25,
         stone: false, lights: true
       });
     });
   }
 
-  // 7. Victorian Wrought-Iron Streetlamps arranged evenly around the wide circular plaza
+  // 7. Victorian Wrought-Iron Streetlamps (Inner Ring R=13.0 + Outer Ring R=27.6, budgeted PointLights)
   buildStreetLamps() {
-    const lampCount = 12;
-    const lampR = 9.8;
-    for (let i = 0; i < lampCount; i++) {
-      const a = (i / lampCount) * TAU + 0.26;
-      const g = new THREE.Group();
-      g.position.set(Math.cos(a) * lampR, 0, Math.sin(a) * lampR);
-      this.cityGroup.add(g);
+    const placeLampRing = (count, radius, lightEvery) => {
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * TAU + 0.19;
+        const g = new THREE.Group();
+        g.position.set(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+        this.cityGroup.add(g);
 
-      this.addBox(-0.07, 0, -0.07, 0.14, 1.75, 0.14, this.mat.woodDark, g);
-      this.addBox(-0.22, 1.68, -0.05, 0.44, 0.07, 0.10, this.mat.woodDark, g);
-      this.addBox(-0.19, 1.75, -0.19, 0.38, 0.46, 0.38, this.mat.window, g);
-      this.addBox(-0.24, 2.21, -0.24, 0.48, 0.10, 0.48, this.mat.snow, g);
+        this.addBox(-0.07, 0, -0.07, 0.14, 1.9, 0.14, this.mat.woodDark, g);
+        this.addBox(-0.22, 1.82, -0.05, 0.44, 0.07, 0.10, this.mat.woodDark, g);
+        this.addBox(-0.19, 1.89, -0.19, 0.38, 0.46, 0.38, this.mat.window, g);
+        this.addBox(-0.24, 2.35, -0.24, 0.48, 0.10, 0.48, this.mat.snow, g);
 
-      const light = new THREE.PointLight(0xffa828, 2.6, 8.8, 1.5);
-      light.position.set(0, 1.95, 0);
-      g.add(light);
-      this.addGlow(0, 1.95, 0, 2.3, g, this.texGlowWarm, 0.54);
-    }
+        if (i % lightEvery === 0) {
+          const light = new THREE.PointLight(0xffa828, 2.6, 13.0, 1.4);
+          light.position.set(0, 2.1, 0);
+          g.add(light);
+        }
+        this.addGlow(0, 2.1, 0, 2.5, g, this.texGlowWarm, 0.56);
+      }
+    };
+    placeLampRing(16, 13.0, 4); // 4 PointLights + 16 glowing lanterns
+    placeLampRing(16, 27.6, 4); // 4 PointLights + 16 glowing lanterns
   }
 
-  // 8. Snowy Voxel Spruce Trees tucked around the circular village perimeter
+  // 8. Snowy Voxel Spruce Trees decorating both Inner Ring & Mid-Ring Garden Belt
   buildSnowyPines() {
-    const pineAngles = [
-      { deg:  -14, r: 14.2, h: 2.5 },
-      { deg:  -40, r: 14.4, h: 2.7 },
-      { deg:  -56, r: 14.2, h: 2.5 },
-      { deg:  -72, r: 14.2, h: 2.8 },
-      { deg:  -88, r: 14.2, h: 2.6 },
-      { deg: -105, r: 14.2, h: 2.7 },
-      { deg: -123, r: 14.4, h: 2.6 },
-      { deg: -141, r: 14.4, h: 2.6 },
-      { deg: -160, r: 14.2, h: 2.5 },
-      { deg:  180, r: 14.4, h: 2.6 },
-      { deg:    4, r: 14.2, h: 2.5 },
-      { deg:   21, r: 14.4, h: 2.4 },
-      { deg:   39, r: 14.2, h: 2.4 },
-      { deg:   56, r: 13.8, h: 2.2 },
-      { deg:  114, r: 14.2, h: 2.3 }
-    ];
-
-    pineAngles.forEach(p => {
-      const a = p.deg * (Math.PI / 180);
-      this.placeSnowyPine(Math.cos(a) * p.r, 0, Math.sin(a) * p.r, p.h);
-    });
+    for (let i = 0; i < 20; i++) {
+      const deg = (i / 20) * 360 + 9;
+      if ((deg > 78 && deg < 102) || (deg > 262 && deg < 278) || deg < 8 || deg > 352 || (deg > 172 && deg < 188)) continue;
+      const a = deg * (Math.PI / 180);
+      this.placeSnowyPine(Math.cos(a) * 19.2, 0, Math.sin(a) * 19.2, 2.4 + (i % 3) * 0.35, 5);
+    }
+    for (let i = 0; i < 24; i++) {
+      const deg = (i / 24) * 360 + 7;
+      if ((deg > 76 && deg < 104) || (deg > 260 && deg < 280) || deg < 10 || deg > 350 || (deg > 170 && deg < 190)) continue;
+      const a = deg * (Math.PI / 180);
+      this.placeSnowyPine(Math.cos(a) * 29.2, 0, Math.sin(a) * 29.2, 2.6 + (i % 3) * 0.45, 5);
+    }
   }
 
   // Handcrafted Stepped-Voxel Snowy Pine Tree (Unifies visual language with central tree & cottages!)
@@ -1263,185 +1310,171 @@ class ChristmasCity3D {
     this.addBox(-0.11 * sc, tipY + 0.32 * sc, -0.11 * sc, 0.22 * sc, 0.14 * sc, 0.22 * sc, this.mat.snow, g);
   }
 
-  // 8A-0. Grand Festive Boulevard from Center Plaza Out Past the Village Circle + Tall Welcome Archway
+  // 8A-0. Extended Grand Festive Boulevard (z = 11.4 -> 58.0) + Tall Welcome Archway at z = 44.5
   buildEntranceBoulevardAndArchway() {
-    // 1. Cobblestone Avenue stretching from inner plaza (z = 8.4) out past circle edge (z = 38.0)
+    // 1. Cobblestone Avenue extending past Ring 2 outer edge (z = 36.5) all the way to z = 58.5
     const roadTex = TextureForge.createCobblestone();
-    roadTex.repeat.set(2.2, 11);
+    roadTex.repeat.set(2.6, 16);
     const roadMat = new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.88, metalness: 0.08 });
-    const road = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.14, 30.5), roadMat);
-    road.position.set(0, 0.01, 23.2);
+    const road = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.14, 48.0), roadMat);
+    road.position.set(0, 0.01, 35.0);
     road.receiveShadow = true;
     this.cityGroup.add(road);
 
-    // Snow-topped low stone curbs flanking both sides of the boulevard
-    [-3.15, 2.85].forEach(cx => {
-      this.addBox(cx, 0.02, 14.5, 0.30, 0.24, 24.0, this.mat.stoneDark);
-      this.addBox(cx - 0.03, 0.26, 14.5, 0.36, 0.10, 24.0, this.mat.snow);
+    // Snow-topped low stone curbs flanking both sides of the extended avenue
+    [-3.55, 3.25].forEach(cx => {
+      this.addBox(cx, 0.02, 20.0, 0.30, 0.24, 39.0, this.mat.stoneDark);
+      this.addBox(cx - 0.03, 0.26, 20.0, 0.36, 0.10, 39.0, this.mat.snow);
     });
 
-    // Victorian Streetlamps & Overhead Festive Fairy Light Garlands along the Boulevard
-    const lampZs = [15.5, 21.0, 26.8, 32.5, 37.0];
+    // Victorian Streetlamps & Overhead Festive Fairy Light Garlands along the Grand Boulevard
+    const lampZs = [20.0, 26.0, 32.0, 38.5, 44.5, 50.5, 56.5];
     const bulbGeo = new THREE.SphereGeometry(0.075, 6, 6);
     const bulbCols = [0xff2a3c, 0x24d658, 0xffd028];
 
     lampZs.forEach((lz, idx) => {
-      [-3.35, 3.35].forEach(lx => {
+      [-3.8, 3.8].forEach(lx => {
         const g = new THREE.Group();
         g.position.set(lx, 0, lz);
         this.cityGroup.add(g);
 
-        this.addBox(-0.07, 0, -0.07, 0.14, 2.05, 0.14, this.mat.woodDark, g);
-        this.addBox(-0.22, 1.98, -0.05, 0.44, 0.07, 0.10, this.mat.woodDark, g);
-        this.addBox(-0.19, 2.05, -0.19, 0.38, 0.46, 0.38, this.mat.window, g);
-        this.addBox(-0.24, 2.51, -0.24, 0.48, 0.10, 0.48, this.mat.snow, g);
+        this.addBox(-0.07, 0, -0.07, 0.14, 2.1, 0.14, this.mat.woodDark, g);
+        this.addBox(-0.22, 2.02, -0.05, 0.44, 0.07, 0.10, this.mat.woodDark, g);
+        this.addBox(-0.19, 2.09, -0.19, 0.38, 0.46, 0.38, this.mat.window, g);
+        this.addBox(-0.24, 2.55, -0.24, 0.48, 0.10, 0.48, this.mat.snow, g);
 
-        if (idx % 2 === 0) {
-          const light = new THREE.PointLight(0xffa828, 2.5, 9.0, 1.5);
-          light.position.set(0, 2.25, 0);
-          g.add(light);
-        }
-        this.addGlow(0, 2.25, 0, 2.2, g, this.texGlowWarm, 0.52);
+        this.addGlow(0, 2.3, 0, 2.3, g, this.texGlowWarm, 0.54);
       });
 
-      // Drooping festive fairy light string crossing above the boulevard (except directly on archway)
-      if (lz !== 26.8) {
-        const steps = 11;
+      // Single centered warm PointLight every second pair for fast 60 FPS shading
+      if (idx === 1 || idx === 5) {
+        const light = new THREE.PointLight(0xffa828, 2.8, 15.0, 1.4);
+        light.position.set(0, 3.2, lz);
+        this.cityGroup.add(light);
+      }
+
+      if (lz !== 44.5) {
+        const steps = 12;
         for (let s = 1; s < steps; s++) {
           const u = s / steps;
-          const bx = -3.35 + u * 6.7;
-          const sag = -0.45 * Math.sin(u * Math.PI);
+          const bx = -3.8 + u * 7.6;
+          const sag = -0.48 * Math.sin(u * Math.PI);
           const col = bulbCols[(s + idx) % bulbCols.length];
           const bulb = new THREE.Mesh(
             bulbGeo,
             new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 2.8, roughness: 0.2 })
           );
-          bulb.position.set(bx, 2.95 + sag, lz);
+          bulb.position.set(bx, 3.05 + sag, lz);
           this.cityGroup.add(bulb);
           this.twinkleBulbs.push({ mesh: bulb, phase: Math.random() * TAU });
         }
       }
     });
 
-    // 2. TALL GRAND WELCOME ARCHWAY ("CHÚC MỪNG GIÁNG SINH") Outside Village Circle at z = 26.8
+    // 2. TALL GRAND WELCOME ARCHWAY ("★ CHÚC MỪNG GIÁNG SINH ★") Outside Outer Village Ring at z = 44.5
     const archGrp = new THREE.Group();
-    archGrp.position.set(0, 0, 26.8);
+    archGrp.position.set(0, 0, 44.5);
     this.cityGroup.add(archGrp);
 
-    const pillarX = 3.75;
-    const pillarH = 6.2;
+    const pillarX = 4.35;
+    const pillarH = 7.0;
 
-    // Left & Right Grand Stone/Timber Pillars with Snowy Roof Caps & Top Lanterns
     [-pillarX, pillarX].forEach(px => {
-      // Wide stone plinth base
-      this.addBox(px - 0.62, 0, -0.62, 1.24, 0.9, 1.24, this.mat.stoneDark, archGrp);
-      // Tall stone-masonry pillar shaft
-      this.addBox(px - 0.46, 0.9, -0.46, 0.92, pillarH - 0.9, 0.92, this.mat.stoneLight, archGrp);
-      // Dark timber vertical corner trims
-      [-0.48, 0.36].forEach(tx => {
-        [-0.48, 0.36].forEach(tz => {
-          this.addBox(px + tx, 0.9, tz, 0.12, pillarH - 0.9, 0.12, this.mat.woodDark, archGrp);
+      this.addBox(px - 0.68, 0, -0.68, 1.36, 1.0, 1.36, this.mat.stoneDark, archGrp);
+      this.addBox(px - 0.50, 1.0, -0.50, 1.00, pillarH - 1.0, 1.00, this.mat.stoneLight, archGrp);
+      [-0.52, 0.40].forEach(tx => {
+        [-0.52, 0.40].forEach(tz => {
+          this.addBox(px + tx, 1.0, tz, 0.12, pillarH - 1.0, 0.12, this.mat.woodDark, archGrp);
         });
       });
-      // Collar cornice + stepped snow turret cap
-      this.addBox(px - 0.62, pillarH, -0.62, 1.24, 0.24, 1.24, this.mat.woodDark, archGrp);
+      this.addBox(px - 0.68, pillarH, -0.68, 1.36, 0.26, 1.36, this.mat.woodDark, archGrp);
       for (let r = 0; r < 5; r++) {
-        const sw = 1.32 * (1 - r / 5.5);
-        this.addBox(px - sw / 2, pillarH + 0.24 + r * 0.22, -sw / 2, sw, 0.22, sw, r > 0 ? this.mat.snow : this.mat.roofDark, archGrp);
+        const sw = 1.44 * (1 - r / 5.5);
+        this.addBox(px - sw / 2, pillarH + 0.26 + r * 0.24, -sw / 2, sw, 0.24, sw, r > 0 ? this.mat.snow : this.mat.roofDark, archGrp);
       }
-      // Golden finial lantern on top of each pillar
-      this.addBox(px - 0.18, pillarH + 1.34, -0.18, 0.36, 0.42, 0.36, this.mat.window, archGrp);
-      this.addGlow(px, pillarH + 1.55, 0, 2.2, archGrp, this.texGlowGold, 0.62);
+      this.addBox(px - 0.20, pillarH + 1.46, -0.20, 0.40, 0.46, 0.40, this.mat.window, archGrp);
+      this.addGlow(px, pillarH + 1.68, 0, 2.4, archGrp, this.texGlowGold, 0.65);
 
-      // Hanging lantern bracket facing inward onto the road
       const inDir = px < 0 ? 1 : -1;
-      this.addBox(px + inDir * 0.45 - 0.2, 4.1, -0.06, 0.4, 0.10, 0.12, this.mat.woodDark, archGrp);
-      this.addBox(px + inDir * 0.72 - 0.16, 3.62, -0.16, 0.32, 0.44, 0.32, this.mat.window, archGrp);
-      this.addGlow(px + inDir * 0.72, 3.84, 0, 2.0, archGrp, this.texGlowWarm, 0.55);
+      this.addBox(px + inDir * 0.48 - 0.22, 4.6, -0.06, 0.44, 0.10, 0.12, this.mat.woodDark, archGrp);
+      this.addBox(px + inDir * 0.78 - 0.17, 4.10, -0.17, 0.34, 0.46, 0.34, this.mat.window, archGrp);
+      this.addGlow(px + inDir * 0.78, 4.33, 0, 2.1, archGrp, this.texGlowWarm, 0.55);
     });
 
-    // High Overhead Arch Beam & Festive Roof Canopy
-    this.addBox(-pillarX - 0.3, 4.95, -0.42, (pillarX + 0.3) * 2, 0.36, 0.84, this.mat.woodDark, archGrp);
-    this.addBox(-pillarX - 0.3, 6.52, -0.45, (pillarX + 0.3) * 2, 0.32, 0.90, this.mat.woodDark, archGrp);
-    // Snowy pitched canopy over the signboard
+    // High Overhead Arch Beam & Snow Roof Canopy
+    this.addBox(-pillarX - 0.32, 5.55, -0.45, (pillarX + 0.32) * 2, 0.38, 0.90, this.mat.woodDark, archGrp);
+    this.addBox(-pillarX - 0.32, 7.28, -0.48, (pillarX + 0.32) * 2, 0.34, 0.96, this.mat.woodDark, archGrp);
     for (let r = 0; r < 4; r++) {
-      const rw = (pillarX + 0.5) * 2 - r * 0.25;
-      const rd = 1.35 * (1 - r / 5);
-      this.addBox(-rw / 2, 6.84 + r * 0.18, -rd / 2, rw, 0.19, rd, this.mat.snow, archGrp);
+      const rw = (pillarX + 0.55) * 2 - r * 0.28;
+      const rd = 1.45 * (1 - r / 5);
+      this.addBox(-rw / 2, 7.62 + r * 0.20, -rd / 2, rw, 0.21, rd, this.mat.snow, archGrp);
     }
 
-    // Evergreen Garland & Red Bows wrapping the overhead arch beam
-    for (let i = 0; i <= 14; i++) {
-      const gx = -pillarX + 0.4 + (i / 14) * ((pillarX - 0.4) * 2);
-      this.addBox(gx - 0.24, 4.74, -0.46, 0.48, 0.28, 0.92, this.mat.wreath, archGrp);
-      // Twinkling festive bulbs along the lower arch edge
+    for (let i = 0; i <= 16; i++) {
+      const gx = -pillarX + 0.45 + (i / 16) * ((pillarX - 0.45) * 2);
+      this.addBox(gx - 0.25, 5.32, -0.48, 0.50, 0.30, 0.96, this.mat.wreath, archGrp);
       const col = bulbCols[i % bulbCols.length];
       const b = new THREE.Mesh(
         bulbGeo,
         new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 3.0, roughness: 0.2 })
       );
-      b.position.set(gx, 4.72, 0.50);
+      b.position.set(gx, 5.30, 0.52);
       archGrp.add(b);
       this.twinkleBulbs.push({ mesh: b, phase: Math.random() * TAU });
     }
-    // Red Christmas bows at left, center & right of garland
-    [-2.4, 0, 2.4].forEach(bx => {
-      this.addBox(bx - 0.18, 4.65, 0.44, 0.36, 0.28, 0.16, this.mat.red, archGrp);
+    [-2.8, 0, 2.8].forEach(bx => {
+      this.addBox(bx - 0.20, 5.22, 0.46, 0.40, 0.30, 0.16, this.mat.red, archGrp);
     });
 
-    // Radiant Golden Star Peak atop the Welcome Archway
-    const archStar = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.42, 0),
-      this.mat.gold
-    );
-    archStar.position.set(0, 8.05, 0);
+    const archStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 0), this.mat.gold);
+    archStar.position.set(0, 8.95, 0);
     archGrp.add(archStar);
-    this.addGlow(0, 8.05, 0, 3.2, archGrp, this.texGlowGold, 0.72);
+    this.addGlow(0, 8.95, 0, 3.6, archGrp, this.texGlowGold, 0.75);
 
-    // Double-Sided Glowing Signboard: "★ CHÚC MỪNG GIÁNG SINH ★"
     const signTex = TextureForge.createWelcomeSign("CHÚC MỪNG GIÁNG SINH");
     this.archwaySignMat = new THREE.MeshStandardMaterial({
       map: signTex,
       emissiveMap: signTex,
       emissive: new THREE.Color(0xffe082),
-      emissiveIntensity: 1.65,
+      emissiveIntensity: 1.7,
       roughness: 0.25
     });
 
-    const signBacking = this.addBox(-3.35, 5.26, -0.26, 6.70, 1.32, 0.52, this.mat.woodDark, archGrp);
-    const frontSign = new THREE.Mesh(new THREE.PlaneGeometry(6.55, 1.24), this.archwaySignMat);
-    frontSign.position.set(0, 5.92, 0.28);
+    this.addBox(-3.85, 5.88, -0.28, 7.70, 1.46, 0.56, this.mat.woodDark, archGrp);
+    const frontSign = new THREE.Mesh(new THREE.PlaneGeometry(7.50, 1.36), this.archwaySignMat);
+    frontSign.position.set(0, 6.61, 0.30);
     archGrp.add(frontSign);
 
-    const backSign = new THREE.Mesh(new THREE.PlaneGeometry(6.55, 1.24), this.archwaySignMat);
-    backSign.position.set(0, 5.92, -0.28);
+    const backSign = new THREE.Mesh(new THREE.PlaneGeometry(7.50, 1.36), this.archwaySignMat);
+    backSign.position.set(0, 6.61, -0.30);
     backSign.rotation.y = Math.PI;
     archGrp.add(backSign);
 
-    // Warm Archway Floodlight illuminating signboard & crowd underneath
-    const archLight = new THREE.PointLight(0xffbe42, 4.2, 14, 1.4);
-    archLight.position.set(0, 4.4, 1.4);
+    const archLight = new THREE.PointLight(0xffbe42, 4.5, 18, 1.4);
+    archLight.position.set(0, 4.8, 1.6);
     archGrp.add(archLight);
 
-    // 3. COZY HOUSES, ROADSIDE STALLS & PINE TREES LINING BOTH SIDES OF THE BOULEVARD
+    // 3. COZY HOUSES, ROADSIDE STALLS & PINE TREES LINING BOTH SIDES OF THE OUTER BOULEVARD
     const boulevardHouses = [
-      // Left side of avenue (facing East toward the street: rot = +Math.PI/2)
-      { x: -6.4, z: 21.0, rot:  Math.PI / 2 - 0.08, w: 3.4, d: 2.7, h: 2.9, rh: 1.7, stone: false, smoke: true  },
-      { x: -6.8, z: 26.2, rot:  Math.PI / 2 + 0.06, w: 3.2, d: 2.6, h: 2.7, rh: 1.6, stone: true,  smoke: false },
-      { x: -6.5, z: 31.4, rot:  Math.PI / 2 - 0.05, w: 3.5, d: 2.7, h: 3.0, rh: 1.8, stone: false, smoke: true  },
-      { x: -6.6, z: 36.2, rot:  Math.PI / 2 + 0.12, w: 3.1, d: 2.5, h: 2.6, rh: 1.5, stone: true,  smoke: false },
-      // Right side of avenue (facing West toward the street: rot = -Math.PI/2)
-      { x:  6.4, z: 21.2, rot: -Math.PI / 2 + 0.08, w: 3.3, d: 2.7, h: 2.8, rh: 1.7, stone: true,  smoke: false },
-      { x:  6.8, z: 26.4, rot: -Math.PI / 2 - 0.06, w: 3.4, d: 2.7, h: 3.0, rh: 1.8, stone: false, smoke: true  },
-      { x:  6.5, z: 31.6, rot: -Math.PI / 2 + 0.05, w: 3.2, d: 2.6, h: 2.7, rh: 1.6, stone: true,  smoke: false },
-      { x:  6.6, z: 36.4, rot: -Math.PI / 2 - 0.12, w: 3.1, d: 2.5, h: 2.6, rh: 1.5, stone: false, smoke: false }
+      // Left side of avenue (facing East toward the street)
+      { x: -7.2, z: 38.8, rot:  Math.PI / 2 - 0.06, w: 3.5, d: 2.8, h: 3.0, rh: 1.8, stone: false, smoke: true  },
+      { x: -7.6, z: 44.2, rot:  Math.PI / 2 + 0.05, w: 3.4, d: 2.7, h: 2.9, rh: 1.7, stone: true,  smoke: false },
+      { x: -7.2, z: 49.6, rot:  Math.PI / 2 - 0.06, w: 3.6, d: 2.8, h: 3.1, rh: 1.8, stone: false, smoke: true  },
+      { x: -7.4, z: 54.8, rot:  Math.PI / 2 + 0.10, w: 3.2, d: 2.6, h: 2.7, rh: 1.6, stone: true,  smoke: false },
+      // Right side of avenue (facing West toward the street)
+      { x:  7.2, z: 39.0, rot: -Math.PI / 2 + 0.06, w: 3.4, d: 2.8, h: 2.9, rh: 1.8, stone: true,  smoke: false },
+      { x:  7.6, z: 44.4, rot: -Math.PI / 2 - 0.05, w: 3.5, d: 2.8, h: 3.1, rh: 1.8, stone: false, smoke: true  },
+      { x:  7.2, z: 49.8, rot: -Math.PI / 2 + 0.06, w: 3.3, d: 2.7, h: 2.8, rh: 1.7, stone: true,  smoke: false },
+      { x:  7.4, z: 55.0, rot: -Math.PI / 2 - 0.10, w: 3.2, d: 2.6, h: 2.7, rh: 1.6, stone: false, smoke: false }
     ];
     boulevardHouses.forEach(cfg => this.createCottage({ ...cfg, lights: true }));
 
-    // Roadside red-and-white Christmas market stalls right beside the avenue
+    // Roadside market stalls beside the boulevard
     const roadStalls = [
-      { x: -4.4, z: 23.5, rot:  Math.PI / 2 },
-      { x:  4.4, z: 29.0, rot: -Math.PI / 2 }
+      { x: -4.9, z: 41.2, rot:  Math.PI / 2 },
+      { x:  4.9, z: 47.2, rot: -Math.PI / 2 },
+      { x: -4.9, z: 52.2, rot:  Math.PI / 2 },
+      { x:  4.9, z: 28.5, rot: -Math.PI / 2 }
     ];
     roadStalls.forEach(st => {
       const sGrp = new THREE.Group();
@@ -1449,7 +1482,7 @@ class ChristmasCity3D {
       sGrp.rotation.y = st.rot;
       this.cityGroup.add(sGrp);
 
-      const sw = 1.8, sd = 1.3, sh = 1.05;
+      const sw = 1.9, sd = 1.35, sh = 1.05;
       this.addBox(-sw / 2, 0, -sd / 2, sw, sh, sd, this.mat.woodMed, sGrp);
       this.addBox(-sw / 2 + 0.14, 0.50, sd / 2 + 0.02, sw - 0.28, 0.45, 0.08, this.mat.window, sGrp);
       [-sw / 2, sw / 2 - 0.1].forEach(px => {
@@ -1467,19 +1500,17 @@ class ChristmasCity3D {
           this.addBox(bx, ly, -lSpan / 2, sW, 0.08, lSpan, m, sGrp);
         }
       }
-      const lgt = new THREE.PointLight(0xffaa28, 2.0, 5.5);
-      lgt.position.set(0, sh + 0.4, 0.3);
-      sGrp.add(lgt);
+      this.addGlow(0, sh + 0.4, 0.3, 2.2, sGrp, this.texGlowWarm, 0.50);
     });
 
-    // Snowy pines framing the outer boulevard cottages
+    // Snowy voxel pines framing the outer boulevard cottages
     [
-      { x: -9.2, z: 23.5, h: 2.7 },
-      { x: -9.5, z: 29.0, h: 2.9 },
-      { x: -9.2, z: 34.0, h: 2.5 },
-      { x:  9.2, z: 23.8, h: 2.8 },
-      { x:  9.5, z: 29.2, h: 2.6 },
-      { x:  9.2, z: 34.2, h: 2.5 }
+      { x: -10.5, z: 41.5, h: 2.8 },
+      { x: -10.8, z: 47.0, h: 3.1 },
+      { x: -10.5, z: 53.0, h: 2.7 },
+      { x:  10.5, z: 41.8, h: 2.9 },
+      { x:  10.8, z: 47.2, h: 2.8 },
+      { x:  10.5, z: 53.2, h: 2.6 }
     ].forEach(p => this.placeSnowyPine(p.x, 0, p.z, p.h, 5));
   }
 
@@ -1533,22 +1564,21 @@ class ChristmasCity3D {
       return grp;
     };
 
-    // A. Low Stepped-Voxel Snowy Pine Hills (R = 22.0 to 28.5)
-    const hillCount = 20;
+    // A. Low Stepped-Voxel Snowy Pine Hills Outside Ring 2 (R = 41.0 to 52.0)
+    const hillCount = 26;
     for (let i = 0; i < hillCount; i++) {
       const a = (i / hillCount) * TAU + (rand() - 0.5) * 0.12;
       const deg = (a * 180 / Math.PI + 360) % 360;
-      if (deg > 62 && deg < 118) continue;
+      if (deg > 66 && deg < 114) continue;
 
-      const r = 22.8 + rand() * 5.8;
+      const r = 41.5 + rand() * 10.5;
       const hx = Math.cos(a) * r;
       const hz = Math.sin(a) * r;
-      const hW = 5.4 + rand() * 3.0;
-      const hHeight = 1.2 + rand() * 1.4;
+      const hW = 7.4 + rand() * 4.2;
+      const hHeight = 1.6 + rand() * 1.9;
 
       buildVoxelPeak(hx, hz, hW, hHeight, 4, false);
 
-      // Modest voxel pine trees growing on and around each low hill
       const treesOnHill = 2 + Math.floor(rand() * 2);
       for (let t = 0; t < treesOnHill; t++) {
         const ta = rand() * TAU;
@@ -1556,39 +1586,38 @@ class ChristmasCity3D {
         const tx = hx + Math.cos(ta) * tr;
         const tz = hz + Math.sin(ta) * tr;
         const ty = Math.max(0, hHeight * (1 - tr / (hW * 0.55)) * 0.65);
-        this.placeSnowyPine(tx, ty, tz, 2.0 + rand() * 1.4, 4);
+        this.placeSnowyPine(tx, ty, tz, 2.4 + rand() * 1.8, 4);
       }
     }
 
-    // Subtle voxel pine belt just outside the houses (R = 20.5 to 23.0)
-    for (let i = 0; i < 30; i++) {
-      const a = (i / 30) * TAU + (rand() - 0.5) * 0.08;
+    // Subtle voxel pine belt just outside Ring 2 houses (R = 38.0 to 42.5)
+    for (let i = 0; i < 42; i++) {
+      const a = (i / 42) * TAU + (rand() - 0.5) * 0.08;
       const deg = (a * 180 / Math.PI + 360) % 360;
-      if (deg > 60 && deg < 120) continue;
-      const r = 20.6 + rand() * 2.5;
-      this.placeSnowyPine(Math.cos(a) * r, 0, Math.sin(a) * r, 2.1 + rand() * 1.4, 4);
+      if (deg > 66 && deg < 114) continue;
+      const r = 38.2 + rand() * 4.2;
+      this.placeSnowyPine(Math.cos(a) * r, 0, Math.sin(a) * r, 2.5 + rand() * 1.8, 4);
     }
 
-    // B. Sculpted Stepped-Voxel Snow-Capped Alpine Mountains (R = 33 to 44, graceful low profile)
-    const peakCount = 20;
+    // B. Sculpted Stepped-Voxel Snow-Capped Alpine Mountains (R = 58 to 74)
+    const peakCount = 24;
     for (let i = 0; i < peakCount; i++) {
       const a = (i / peakCount) * TAU + (rand() - 0.5) * 0.14;
       const deg = (a * 180 / Math.PI + 360) % 360;
-      if (deg > 58 && deg < 122) continue;
+      if (deg > 64 && deg < 116) continue;
 
-      const r = 33.0 + rand() * 11.0;
+      const r = 58.0 + rand() * 16.0;
       const mx = Math.cos(a) * r;
       const mz = Math.sin(a) * r;
-      const mW = 8.5 + rand() * 4.5;
-      const mH = 5.6 + rand() * 4.4;
+      const mW = 12.0 + rand() * 6.5;
+      const mH = 8.2 + rand() * 6.2;
 
       buildVoxelPeak(mx, mz, mW, mH, 9, true);
 
-      // Flanking stepped crag shoulder
-      const sa = a + 0.08;
+      const sa = a + 0.07;
       buildVoxelPeak(
-        Math.cos(sa) * (r - 2.2),
-        Math.sin(sa) * (r - 2.2),
+        Math.cos(sa) * (r - 3.5),
+        Math.sin(sa) * (r - 3.5),
         mW * 0.58,
         mH * 0.56,
         6,
@@ -1596,14 +1625,14 @@ class ChristmasCity3D {
       );
     }
 
-    // C. Far Misty Silhouette Mountain Horizon (R = 54 to 66, merges village valley seamlessly into night sky)
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * TAU;
+    // C. Far Misty Silhouette Mountain Horizon (R = 90 to 108)
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * TAU;
       const deg = (a * 180 / Math.PI + 360) % 360;
-      if (deg > 55 && deg < 125) continue;
-      const r = 55.0 + rand() * 10.0;
-      const fw = 15.0 + rand() * 8.0;
-      const fh = 8.0 + rand() * 6.5;
+      if (deg > 60 && deg < 120) continue;
+      const r = 92.0 + rand() * 16.0;
+      const fw = 22.0 + rand() * 12.0;
+      const fh = 11.0 + rand() * 9.0;
       const m = new THREE.Mesh(new THREE.ConeGeometry(fw * 0.65, fh, 5), farPeakMat);
       m.position.set(Math.cos(a) * r, fh * 0.45, Math.sin(a) * r);
       m.rotation.y = rand() * TAU;
@@ -1659,14 +1688,14 @@ class ChristmasCity3D {
       depthWrite: false
     });
 
-    // Two sweeping curved ribbons across the northern night sky behind the mountains
-    const ribbon1 = new THREE.Mesh(new THREE.PlaneGeometry(115, 20, 48, 8), auroraMat);
-    ribbon1.position.set(-4, 24, -56);
+    // Two sweeping curved ribbons across the expanded northern night sky
+    const ribbon1 = new THREE.Mesh(new THREE.PlaneGeometry(195, 30, 48, 8), auroraMat);
+    ribbon1.position.set(-6, 36, -96);
     ribbon1.rotation.y = 0.12;
     this.scene.add(ribbon1);
 
-    const ribbon2 = new THREE.Mesh(new THREE.PlaneGeometry(95, 16, 40, 6), auroraMat);
-    ribbon2.position.set(12, 27, -64);
+    const ribbon2 = new THREE.Mesh(new THREE.PlaneGeometry(165, 24, 40, 6), auroraMat);
+    ribbon2.position.set(18, 40, -108);
     ribbon2.rotation.y = -0.18;
     this.scene.add(ribbon2);
   }
@@ -1758,12 +1787,12 @@ class ChristmasCity3D {
 
   updateSantaSleigh() {
     if (!this.santaGroup) return;
-    // Wide graceful elliptical flight high above the village & mountains
-    const a = this.time * 0.16 + 0.9;
-    const rx = 26.0, rz = 22.0;
+    // Wide graceful elliptical flight high above the 2x Christmas Village & Alpine peaks
+    const a = this.time * 0.13 + 0.9;
+    const rx = 44.0, rz = 38.0;
     const x = Math.cos(a) * rx;
-    const z = Math.sin(a) * rz - 6.0;
-    const y = 16.5 + Math.sin(a * 2.0) * 1.8;
+    const z = Math.sin(a) * rz - 8.0;
+    const y = 21.5 + Math.sin(a * 2.0) * 2.4;
 
     this.santaGroup.position.set(x, y, z);
     const dx = -Math.sin(a) * rx;
@@ -1873,13 +1902,13 @@ class ChristmasCity3D {
       return { root, legL, legR, armL, armR, head };
     };
 
-    // Group A: 16 Strollers walking around the wide circular cobblestone plaza
-    for (let i = 0; i < 16; i++) {
+    // Group A: 24 Strollers walking around the grand central cobblestone square (r = 5.0 -> 10.2)
+    for (let i = 0; i < 24; i++) {
       const parts = createCharacter(i, i % 5 === 0);
-      const radius = 4.2 + (i % 5) * 0.78;
+      const radius = 5.0 + (i % 6) * 1.0;
       const dir = (i % 2 === 0) ? 1 : -1;
-      const angle = (i / 16) * TAU;
-      const speed = (0.12 + (i % 3) * 0.03) * dir;
+      const angle = (i / 24) * TAU;
+      const speed = (0.095 + (i % 3) * 0.025) * dir;
 
       this.villagers.push({
         mode: "orbit",
@@ -1891,15 +1920,33 @@ class ChristmasCity3D {
       });
     }
 
-    // Group B: 10 Waypoint Walkers crossing between Plaza, Cathedral Steps & Market Stalls
+    // Group A2: 20 Strollers walking around the outer Ring 2 promenade (r = 26.4 -> 29.2)
+    for (let i = 0; i < 20; i++) {
+      const parts = createCharacter(i + 24, i % 6 === 1);
+      const radius = 26.4 + (i % 4) * 0.85;
+      const dir = (i % 2 === 0) ? -1 : 1;
+      const angle = (i / 20) * TAU;
+      const speed = (0.045 + (i % 3) * 0.012) * dir;
+
+      this.villagers.push({
+        mode: "orbit",
+        ...parts,
+        radius,
+        angle,
+        speed,
+        walkPhase: Math.random() * TAU
+      });
+    }
+
+    // Group B: 12 Waypoint Walkers crossing between Central Square, Cathedral & Market Quadrants
     const paths = [
-      [ { x: 0.2, z: 8.4 }, { x: 0.4, z: 4.8 }, { x: 3.4, z: 3.0 }, { x: 5.8, z: 1.0 }, { x: 4.2, z: -1.4 }, { x: 2.2, z: 3.8 } ],
-      [ { x: -0.6, z: 8.6 }, { x: -1.4, z: 4.5 }, { x: -4.2, z: 3.8 }, { x: -5.4, z: 3.6 }, { x: -3.4, z: 2.0 }, { x: -1.0, z: 4.8 } ],
-      [ { x: 5.2, z: 1.4 }, { x: 2.4, z: 3.6 }, { x: -2.2, z: 3.8 }, { x: -4.8, z: 3.4 }, { x: -2.0, z: 4.2 }, { x: 3.2, z: 3.2 } ]
+      [ { x: 0.4, z: 12.5 }, { x: 0.6, z: 6.5 }, { x: 6.0, z: 4.5 }, { x: 11.5, z: -2.0 }, { x: 7.5, z: -6.0 }, { x: 3.5, z: 6.5 } ],
+      [ { x: -0.8, z: 12.5 }, { x: -2.0, z: 6.5 }, { x: -8.5, z: 6.0 }, { x: -11.5, z: 4.0 }, { x: -6.5, z: -3.5 }, { x: -1.5, z: 7.2 } ],
+      [ { x: 9.0, z: 2.0 }, { x: 4.0, z: 6.5 }, { x: -4.0, z: 6.5 }, { x: -9.5, z: 5.0 }, { x: -3.5, z: 7.5 }, { x: 5.5, z: 5.5 } ]
     ];
 
-    for (let i = 0; i < 10; i++) {
-      const parts = createCharacter(i + 12, i % 4 === 3);
+    for (let i = 0; i < 12; i++) {
+      const parts = createCharacter(i + 44, i % 4 === 3);
       const pts = paths[i % paths.length];
       const seg = i % pts.length;
       const startPt = pts[seg];
@@ -1910,31 +1957,30 @@ class ChristmasCity3D {
         ...parts,
         pts,
         targetIdx: (seg + 1) % pts.length,
-        speed: 0.72 + (i % 3) * 0.16,
+        speed: 0.85 + (i % 3) * 0.18,
         walkPhase: Math.random() * TAU
       });
     }
 
-    // Group C: 14 Stationary Villagers admiring the tree, shopping at stalls, greeting at the archway & roadside homes
+    // Group C: 14 Stationary Villagers admiring the tree, shopping at stalls & socializing by the Welcome Archway
     const standSpots = [
-      { x: -8.2, z: 8.6, rot: -0.5 },   // browsing left plaza market stall
-      { x: -6.2, z: 9.8, rot: -0.4 },   // browsing second plaza market stall
-      { x: -1.4, z: 3.8, rot: 2.8 },    // admiring central tree
-      { x: -0.8, z: 3.9, rot: -2.9 },   // companion admiring tree
-      { x:  6.4, z: 2.4, rot: 1.2 },    // near cathedral steps
-      { x:  1.6, z: 4.8, rot: 2.7 },    // enjoying plaza
-      // Bustling crowd socializing beside the boulevard & Welcome Archway
-      { x: -3.4, z: 23.5, rot: -1.5 },  // shopping at left roadside stall
-      { x: -3.2, z: 24.1, rot: -1.7 },  // companion at left stall
-      { x:  3.4, z: 29.0, rot:  1.5 },  // shopping at right roadside stall
-      { x:  3.2, z: 28.4, rot:  1.3 },  // companion at right stall
-      { x: -2.4, z: 26.2, rot:  0.6 },  // taking photo / admiring archway
-      { x: -1.9, z: 26.5, rot: -0.4 },  // companion at archway
-      { x:  2.4, z: 21.2, rot: -1.2 },  // chatting outside right boulevard house
-      { x: -2.5, z: 31.4, rot:  1.1 }   // chatting outside left boulevard house
+      { x: -10.8, z: 10.6, rot: -0.5 },
+      { x:  10.8, z: 10.6, rot:  0.5 },
+      { x:  -1.8, z:  5.0, rot:  2.8 },
+      { x:  -1.0, z:  5.1, rot: -2.9 },
+      { x:  12.4, z: -4.5, rot:  1.1 },
+      { x:   2.2, z:  6.4, rot:  2.7 },
+      { x:  -3.6, z: 41.2, rot: -1.5 },
+      { x:  -3.3, z: 41.9, rot: -1.7 },
+      { x:   3.6, z: 47.2, rot:  1.5 },
+      { x:   3.3, z: 46.6, rot:  1.3 },
+      { x:  -2.6, z: 44.0, rot:  0.6 },
+      { x:  -2.0, z: 44.4, rot: -0.4 },
+      { x:   2.8, z: 39.0, rot: -1.2 },
+      { x:  -2.8, z: 50.0, rot:  1.1 }
     ];
     standSpots.forEach((sp, i) => {
-      const parts = createCharacter(i + 22, i === 3 || i === 7 || i === 11);
+      const parts = createCharacter(i + 56, i === 3 || i === 7 || i === 11);
       parts.root.position.set(sp.x, 0, sp.z);
       parts.root.rotation.y = sp.rot;
       this.villagers.push({
@@ -1945,13 +1991,12 @@ class ChristmasCity3D {
       });
     });
 
-    // Group D: 28 Bustling Boulevard Strollers streaming continuously IN & OUT under the "CHÚC MỪNG GIÁNG SINH" Archway
-    for (let i = 0; i < 28; i++) {
-      const parts = createCharacter(i + 36, i % 5 === 2);
+    // Group D: 34 Bustling Boulevard Strollers streaming continuously IN & OUT under the "CHÚC MỪNG GIÁNG SINH" Archway
+    for (let i = 0; i < 34; i++) {
+      const parts = createCharacter(i + 70, i % 5 === 2);
       const goingIn = (i % 2 === 0);
-      // Right-hand lane discipline with natural horizontal variation
-      const laneBase = goingIn ? 0.65 + (i % 3) * 0.58 : -(0.65 + (i % 3) * 0.58);
-      const startZ = 8.5 + (i / 28) * 29.5;
+      const laneBase = goingIn ? 0.72 + (i % 3) * 0.65 : -(0.72 + (i % 3) * 0.65);
+      const startZ = 11.5 + (i / 34) * 46.5;
       parts.root.position.set(laneBase, 0, startZ);
       parts.root.rotation.y = goingIn ? Math.PI : 0;
 
@@ -1960,9 +2005,9 @@ class ChristmasCity3D {
         ...parts,
         goingIn,
         laneX: laneBase,
-        minZ: 8.2,
-        maxZ: 38.0,
-        speed: 0.78 + (i % 4) * 0.16,
+        minZ: 11.2,
+        maxZ: 58.2,
+        speed: 0.90 + (i % 4) * 0.18,
         walkPhase: Math.random() * TAU
       });
     }
@@ -2068,12 +2113,12 @@ class ChristmasCity3D {
 
   // 10. Starry Night Sky & Crisp Falling Snowflakes
   initSkyAndSnow() {
-    // Crisp night stars
-    const starCount = 700;
+    // Crisp night stars dome scaled for 2x valley
+    const starCount = 1100;
     const starGeo = new THREE.BufferGeometry();
     const sPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
-      const r = 52 + Math.random() * 25;
+      const r = 125 + Math.random() * 45;
       const theta = Math.random() * TAU;
       const phi = Math.acos(Math.random() * 0.82 + 0.12);
       sPos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
@@ -2083,21 +2128,21 @@ class ChristmasCity3D {
     starGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
     this.starPoints = new THREE.Points(
       starGeo,
-      new THREE.PointsMaterial({ color: 0xeaf4ff, size: 0.24, transparent: true, opacity: 0.85 })
+      new THREE.PointsMaterial({ color: 0xeaf4ff, size: 0.42, transparent: true, opacity: 0.85 })
     );
     this.scene.add(this.starPoints);
 
-    // Crisp falling 6-point snowflakes
-    const snowCount = 1200;
+    // Crisp falling 6-point snowflakes spanning the full 2x Christmas Village
+    const snowCount = 2000;
     const snowGeo = new THREE.BufferGeometry();
     const pos = new Float32Array(snowCount * 3);
     const speeds = new Float32Array(snowCount);
 
     for (let i = 0; i < snowCount; i++) {
-      pos[i * 3]     = (Math.random() - 0.5) * 42;
-      pos[i * 3 + 1] = Math.random() * 24;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 34;
-      speeds[i]      = 0.025 + Math.random() * 0.045;
+      pos[i * 3]     = (Math.random() - 0.5) * 120;
+      pos[i * 3 + 1] = Math.random() * 38;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 120 + 6;
+      speeds[i]      = 0.032 + Math.random() * 0.052;
     }
 
     snowGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
@@ -2126,9 +2171,9 @@ class ChristmasCity3D {
       pos[i * 3 + 1] -= this.snowSpeeds[i];
       pos[i * 3]     += wind;
       if (pos[i * 3 + 1] < 0) {
-        pos[i * 3 + 1] = 23 + Math.random() * 2;
-        pos[i * 3]     = (Math.random() - 0.5) * 42;
-        pos[i * 3 + 2] = (Math.random() - 0.5) * 34;
+        pos[i * 3 + 1] = 36 + Math.random() * 2;
+        pos[i * 3]     = (Math.random() - 0.5) * 120;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 120 + 6;
       }
     }
     this.snowPoints.geometry.attributes.position.needsUpdate = true;
@@ -2140,10 +2185,9 @@ class ChristmasCity3D {
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
       this.controls.maxPolarAngle = Math.PI / 2 - 0.04;
-      this.controls.minDistance = 6;
-      this.controls.maxDistance = 105;
-      this.controls.target.set(-0.5, 3.2, 7.5);
-      // Cancel cinematic fly-through immediately when user drags or zooms
+      this.controls.minDistance = 8;
+      this.controls.maxDistance = 165;
+      this.controls.target.set(-1.0, 4.0, 12.0);
       this.controls.addEventListener("start", () => {
         this.camFlight = null;
         this.walkthroughActive = false;
@@ -2161,7 +2205,7 @@ class ChristmasCity3D {
     });
   }
 
-  // Smooth Cinematic Camera Presets + Fly-Through Walkthrough
+  // Smooth Cinematic Camera Presets + Fly-Through Walkthrough (Scaled for 2x Grand Village)
   flyToPreset(presetName) {
     this.walkthroughActive = false;
     this.autoRotate = false;
@@ -2172,36 +2216,36 @@ class ChristmasCity3D {
       this.walkthroughT = 0;
       if (!this.walkCurve) {
         this.walkCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3( 0.0, 3.6, 42.0), // Outside Welcome Archway
-          new THREE.Vector3( 0.0, 3.1, 29.5), // Approaching "CHÚC MỪNG GIÁNG SINH"
-          new THREE.Vector3( 0.2, 2.7, 21.5), // Passing right under the Archway
-          new THREE.Vector3( 0.6, 2.6, 12.5), // Entering the grand circular square
-          new THREE.Vector3( 5.8, 3.8,  7.5), // Sweeping past the Christmas tree toward Cathedral
-          new THREE.Vector3( 7.6, 5.2,  0.5), // Admiring Cathedral & Rose Window
-          new THREE.Vector3(-4.5, 6.4, -7.2), // Orbiting behind the tree past Clock Tower
-          new THREE.Vector3(-8.8, 7.2,  8.5), // Gliding over market stalls
-          new THREE.Vector3(10.5, 13.8, 46.2) // Returning gracefully to heroic 3/4 panorama
+          new THREE.Vector3( 0.0, 4.2, 62.0),  // Outside Welcome Archway
+          new THREE.Vector3( 0.0, 3.6, 48.0),  // Approaching "CHÚC MỪNG GIÁNG SINH"
+          new THREE.Vector3( 0.2, 3.0, 36.0),  // Passing right under the Archway into Ring 2
+          new THREE.Vector3( 0.8, 2.8, 19.0),  // Crossing into the Grand Central Square
+          new THREE.Vector3( 8.5, 4.8, 10.5),  // Sweeping past the giant Christmas tree
+          new THREE.Vector3(11.0, 6.8,  0.5),  // Admiring the Twin-Spire Cathedral
+          new THREE.Vector3(-7.0, 8.0,-11.0),  // Orbiting behind tree past Clock Tower
+          new THREE.Vector3(-15.0,10.0, 14.0), // Gliding over outer Ring 2 & market stalls
+          new THREE.Vector3(17.5, 22.5, 74.0)  // Returning to grand 2x panoramic view
         ]);
         this.walkLookCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3( 0.0, 4.6, 26.8),
-          new THREE.Vector3( 0.0, 4.8, 22.0),
-          new THREE.Vector3( 0.0, 3.4,  0.0),
-          new THREE.Vector3( 0.0, 3.8,  0.0),
-          new THREE.Vector3( 2.0, 3.8, -1.5),
-          new THREE.Vector3(14.5, 4.5, -8.5),
-          new THREE.Vector3( 0.0, 3.4,  0.0),
-          new THREE.Vector3( 0.0, 3.2,  0.0),
-          new THREE.Vector3(-0.5, 3.2,  7.5)
+          new THREE.Vector3( 0.0, 5.2, 44.5),
+          new THREE.Vector3( 0.0, 5.4, 38.0),
+          new THREE.Vector3( 0.0, 4.2,  0.0),
+          new THREE.Vector3( 0.0, 4.8,  0.0),
+          new THREE.Vector3( 3.0, 4.8, -2.0),
+          new THREE.Vector3(22.0, 6.0,-12.0),
+          new THREE.Vector3( 0.0, 4.5,  0.0),
+          new THREE.Vector3( 0.0, 4.0,  0.0),
+          new THREE.Vector3(-1.0, 4.0, 12.0)
         ]);
       }
       return;
     }
 
     const presets = {
-      overview:  { pos: new THREE.Vector3(10.5, 13.8, 46.2), target: new THREE.Vector3(-0.5, 3.2,  7.5) },
-      archway:   { pos: new THREE.Vector3( 0.0,  4.4, 38.6), target: new THREE.Vector3( 0.0, 4.2, 16.0) },
-      plaza:     { pos: new THREE.Vector3(-7.8,  5.0, 14.5), target: new THREE.Vector3( 0.4, 3.6,  0.0) },
-      cathedral: { pos: new THREE.Vector3( 2.2,  6.2,  4.5), target: new THREE.Vector3(15.5, 4.6, -8.5) }
+      overview:  { pos: new THREE.Vector3( 17.5, 22.5, 74.0), target: new THREE.Vector3(-1.0, 4.0,  12.0) },
+      archway:   { pos: new THREE.Vector3(  0.0,  5.2, 59.0), target: new THREE.Vector3( 0.0, 5.0,  32.0) },
+      plaza:     { pos: new THREE.Vector3(-11.5,  6.8, 20.5), target: new THREE.Vector3( 0.5, 4.5,   0.0) },
+      cathedral: { pos: new THREE.Vector3(  4.0,  8.5,  6.5), target: new THREE.Vector3(21.5, 6.0, -11.5) }
     };
     const p = presets[presetName] || presets.overview;
     this.camFlight = {
