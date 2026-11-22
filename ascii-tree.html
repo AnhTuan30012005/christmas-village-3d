@@ -1219,9 +1219,14 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
     const T_LIGHT   = 4;
     const T_BALL    = 5;
     const T_GIFT    = 6;
-    const T_STAR    = 7;
-    const T_BEAM    = 8;
-    const T_GROUND  = 9;
+    const T_STAR     = 7;
+    const T_BEAM     = 8;
+    const T_GROUND   = 9;
+    const T_BG_STONE = 10;
+    const T_BG_ROOF  = 11;
+    const T_BG_GLOW  = 12;
+    const T_BG_CROSS = 13;
+    const T_CHAR     = 14;
 
     const SHADE_RAMP = ".:-=+*x%#@";
 
@@ -1299,6 +1304,9 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         this.auraDust = [];
         this.sparkleTargets = [];
         this.tapSparks = [];
+        this.elves = [];
+        this.chimneys = [];
+        this.santaTrail = [];
         this.ptrDownPos = { x: 0, y: 0 };
 
         this.zBuf = null;
@@ -1309,6 +1317,7 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         this.glowBuf = null;
 
         this.buildTreeModel();
+        this.buildWorldScenery();
         this.buildAtmosphere();
         this.resize();
         this.camDist = this.baseDist * 1.48; // Start zoomed out for cinematic opening glide-in!
@@ -1590,6 +1599,273 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         });
       }
 
+      // 3-Layer Atmospheric World Scenery (+Z = Background Horizon, -Z = Foreground):
+      // - Background Horizon: Gothic Twin-Spire Cathedral (left-back), Clock Tower (right-back) & 4 Snow Cottages with Chimneys
+      // - Foreground Base: 2 Snowmen, 1 Grazing Reindeer & 5 Animated Christmas Elves (Chú Lùn)
+      // - Sky: Santa's Sleigh & 3 Prancing Reindeer (with Glowing Red-Nosed Rudolph!)
+      buildWorldScenery() {
+        const pushBox = (cx, cz, rot, x0, y0, z0, w, h, d, step, type, col, glyphFn, t0, glow = 0) => {
+          const ca = Math.cos(rot), sa = Math.sin(rot);
+          for (let y = y0; y <= y0 + h + 0.001; y += step) {
+            for (let x = x0; x <= x0 + w + 0.001; x += step) {
+              for (let z = z0; z <= z0 + d + 0.001; z += step) {
+                const shell = x <= x0 + step * 0.65 || x >= x0 + w - step * 0.65 ||
+                              z <= z0 + step * 0.65 || z >= z0 + d - step * 0.65 ||
+                              y >= y0 + h - step * 0.65;
+                if (!shell) continue;
+                const wx = cx + x * ca - z * sa;
+                const wz = cz + x * sa + z * ca;
+                this.points.push({
+                  x: wx, y, z: wz,
+                  nx: 0, ny: 0.7, nz: -0.7,
+                  ao: 0.9,
+                  type,
+                  customCol: col,
+                  customGlow: glow,
+                  t0,
+                  glyph: typeof glyphFn === "function" ? glyphFn(x, y, z) : glyphFn
+                });
+              }
+            }
+          }
+        };
+
+        // =====================================================================
+        // A. BACKGROUND LEFT: GOTHIC TWIN-SPIRE CATHEDRAL (Unobstructed Hero Silhouette + Glowing Gold Accents)
+        // =====================================================================
+        const cathX = -2.28, cathZ = 1.82;
+        const cathRot = Math.atan2(cathX, -cathZ); // Local +Z faces toward central tree & camera
+        const caC = Math.cos(cathRot), saC = Math.sin(cathRot);
+        const cathPt = (lx, ly, lz, type, glyph, col = null, glow = 0, t0 = 7.6) => {
+          this.points.push({
+            x: cathX + lx * caC - lz * saC,
+            y: ly,
+            z: cathZ + lx * saC + lz * caC,
+            nx: 0, ny: 0.6, nz: -0.8,
+            ao: 0.90,
+            type,
+            customCol: col,
+            customGlow: glow,
+            t0,
+            glyph
+          });
+        };
+
+        const cw = 1.18, cd = 1.38, ch = 1.12;
+        // Main Stone Nave & Glowing Arched Portal + Side Stained-Glass Windows
+        for (let y = 0.04; y <= ch; y += 0.092) {
+          for (let x = -cw / 2; x <= cw / 2; x += 0.092) {
+            const isPortal = y < 0.48 && Math.abs(x) < 0.22;
+            cathPt(
+              x, y, cd / 2,
+              isPortal ? T_BG_GLOW : T_BG_STONE,
+              isPortal ? (y > 0.36 ? "∩" : "■") : ((Math.round((x + y) * 18) % 2 === 0) ? "#" : "H"),
+              isPortal ? [255, 206, 76] : [86, 108, 152],
+              isPortal ? 1 : 0, 7.6
+            );
+            cathPt(x, y, -cd / 2, T_BG_STONE, "#", [66, 84, 122], 0, 7.6);
+          }
+          for (let z = -cd / 2 + 0.10; z < cd / 2; z += 0.105) {
+            const isWin = y > 0.30 && y < 0.84 && ((Math.abs(z + 1.0) * 10) % 3.4 < 1.45);
+            [-cw / 2, cw / 2].forEach(sx => {
+              cathPt(
+                sx, y, z,
+                isWin ? T_BG_GLOW : T_BG_STONE,
+                isWin ? "∩" : "|",
+                isWin ? [255, 194, 64] : [78, 98, 140],
+                isWin ? 1 : 0, 7.6
+              );
+            });
+          }
+        }
+        // Radiant Circular Rose Window (☼) on Cathedral Facade
+        this.fibSphere(24).forEach(rp => {
+          cathPt(rp.x * 0.20, 0.82 + rp.y * 0.20, cd / 2 + 0.03, T_BG_GLOW, "☼", [255, 220, 86], 2, 7.9);
+        });
+        // Gabled Snowy Roof
+        for (let ry = 0; ry <= 0.48; ry += 0.08) {
+          const span = (cw / 2 + 0.06) * (1 - ry / 0.50);
+          for (let rx = -span; rx <= span; rx += 0.095) {
+            for (let rz = -cd / 2; rz <= cd / 2; rz += 0.14) {
+              cathPt(rx, ch + ry, rz, T_BG_ROOF, ry > 0.12 ? "^" : "*", [196, 218, 246], 0, 7.8);
+            }
+          }
+        }
+        // Twin Gothic Spires + Glowing Golden Crosses (✝)!
+        [-cw * 0.37, cw * 0.37].forEach(ox => {
+          const sz = cd / 2 - 0.14;
+          for (let sy = ch; sy <= ch + 1.50; sy += 0.075) {
+            const sw = 0.20 * (1 - (sy - ch) / 1.56);
+            for (let sx = -sw; sx <= sw; sx += 0.065) {
+              cathPt(ox + sx, sy, sz, sy > ch + 0.95 ? T_BG_ROOF : T_BG_STONE, sy > ch + 1.2 ? "^" : "#", sy > ch + 0.95 ? [208, 226, 250] : [96, 118, 164], 0, 8.0);
+              cathPt(ox, sy, sz + sx, T_BG_STONE, "|", [88, 108, 152], 0, 8.0);
+            }
+          }
+          // Glowing Golden Cross (✝) atop each spire
+          cathPt(ox, ch + 1.58, sz, T_BG_CROSS, "✝", [255, 232, 108], 2, 8.2);
+          cathPt(ox, ch + 1.69, sz, T_BG_CROSS, "✦", [255, 244, 156], 2, 8.2);
+        });
+
+        // =====================================================================
+        // B. BACKGROUND RIGHT: ALPINE STONE CLOCK TOWER (Tháp Đồng Hồ Cổ — Framed Between Tree & Card)
+        // =====================================================================
+        const clkX = 1.84, clkZ = 2.05;
+        const clkRot = Math.atan2(clkX, -clkZ);
+        pushBox(clkX, clkZ, clkRot, -0.32, 0.04, -0.32, 0.64, 1.62, 0.64, 0.095, T_BG_STONE, [86, 108, 152], () => "#", 7.7, 0);
+        // Glowing Circular Clock Face facing Plaza
+        const caK = Math.cos(clkRot), saK = Math.sin(clkRot);
+        this.fibSphere(20).forEach(cp => {
+          const lx = cp.x * 0.19, lz = 0.35;
+          this.points.push({
+            x: clkX + lx * caK - lz * saK,
+            y: 1.32 + cp.y * 0.19,
+            z: clkZ + lx * saK + lz * caK,
+            nx: 0, ny: 0.5, nz: -0.85, ao: 1.0,
+            type: T_BG_GLOW, customCol: [255, 224, 92], customGlow: 2, t0: 8.0, glyph: "☼"
+          });
+        });
+        // Steep Peaked Snowy Spire + Golden Finial
+        for (let ry = 0; ry <= 0.66; ry += 0.075) {
+          const rw = 0.38 * (1 - ry / 0.68);
+          for (let rx = -rw; rx <= rw; rx += 0.08) {
+            for (let rz = -rw; rz <= rw; rz += 0.08) {
+              if (Math.abs(rx) < rw - 0.075 && Math.abs(rz) < rw - 0.075) continue;
+              this.points.push({
+                x: clkX + rx * caK - rz * saK,
+                y: 1.66 + ry,
+                z: clkZ + rx * saK + rz * caK,
+                nx: 0, ny: 0.8, nz: -0.6, ao: 0.92,
+                type: T_BG_ROOF, customCol: [204, 224, 248], customGlow: 0, t0: 7.9, glyph: "^"
+              });
+            }
+          }
+        }
+        this.points.push({
+          x: clkX, y: 2.38, z: clkZ, nx: 0, ny: 1, nz: 0, ao: 1,
+          type: T_BG_CROSS, customCol: [255, 232, 108], customGlow: 2, t0: 8.1, glyph: "✦"
+        });
+
+        // =====================================================================
+        // C. 4 COZY BACKDROP SNOW COTTAGES ALONG THE HORIZON ARC WITH CHIMNEY SMOKE
+        // =====================================================================
+        const cottages = [
+          { x: -3.35, z: 1.15, w: 0.72, d: 0.56, h: 0.56, rh: 0.36 },
+          { x: -1.12, z: 2.48, w: 0.76, d: 0.58, h: 0.60, rh: 0.38 },
+          { x:  1.02, z: 2.48, w: 0.74, d: 0.56, h: 0.58, rh: 0.36 },
+          { x:  2.95, z: 1.38, w: 0.72, d: 0.56, h: 0.56, rh: 0.36 }
+        ];
+        cottages.forEach((h, idx) => {
+          const rot = Math.atan2(h.x, -h.z);
+          const ca = Math.cos(rot), sa = Math.sin(rot);
+          const hw = h.w / 2, hd = h.d / 2;
+          // Walls + Glowing Amber Windows
+          for (let y = 0.04; y <= h.h; y += 0.09) {
+            for (let x = -hw; x <= hw; x += 0.09) {
+              const isWin = y > 0.16 && y < 0.44 && Math.abs(x) > 0.07 && Math.abs(x) < hw - 0.07;
+              this.points.push({
+                x: h.x + x * ca - hd * sa, y, z: h.z + x * sa + hd * ca,
+                nx: 0, ny: 0.5, nz: -0.8, ao: 0.88,
+                type: isWin ? T_BG_GLOW : T_BG_STONE,
+                customCol: isWin ? [255, 202, 68] : [88, 84, 114],
+                customGlow: isWin ? 1 : 0,
+                t0: 8.0 + idx * 0.18,
+                glyph: isWin ? "■" : "#"
+              });
+            }
+          }
+          // Thick Snow Roof
+          for (let ry = 0; ry <= h.rh; ry += 0.078) {
+            const span = (hw + 0.07) * (1 - ry / (h.rh + 0.02));
+            for (let rx = -span; rx <= span; rx += 0.095) {
+              for (let rz = -hd; rz <= hd; rz += 0.14) {
+                this.points.push({
+                  x: h.x + rx * ca - rz * sa, y: h.h + ry, z: h.z + rx * sa + rz * ca,
+                  nx: 0, ny: 0.9, nz: -0.4, ao: 0.92,
+                  type: T_BG_ROOF, customCol: [204, 224, 248], customGlow: 0,
+                  t0: 8.1 + idx * 0.18, glyph: "*"
+                });
+              }
+            }
+          }
+          // Register Chimney for animated curling ASCII smoke (~ ° ·)
+          this.chimneys.push({
+            x: h.x + (hw * 0.42) * ca,
+            y: h.h + h.rh + 0.10,
+            z: h.z + (hw * 0.42) * sa,
+            phase: idx * 1.4
+          });
+        });
+
+        // =====================================================================
+        // D. FOREGROUND (-Z = Closer to Viewer): 2 SNOWMEN + 1 GRAZING REINDEER + 5 ANIMATED ELVES
+        // =====================================================================
+        const addSnowman = (sx, sz, rot) => {
+          const ca = Math.cos(rot), sa = Math.sin(rot);
+          const put = (lx, ly, lz, col, glyph, glow = 0) => {
+            this.points.push({
+              x: sx + lx * ca - lz * sa, y: ly, z: sz + lx * sa + lz * ca,
+              nx: 0, ny: 0.7, nz: -0.7, ao: 1.0,
+              type: T_CHAR, customCol: col, customGlow: glow, t0: 9.2, glyph
+            });
+          };
+          // 3 Puffy Snowballs
+          this.fibSphere(24).forEach(p => put(p.x * 0.13, 0.13 + p.y * 0.12, p.z * 0.13, [238, 246, 255], "@"));
+          this.fibSphere(18).forEach(p => put(p.x * 0.10, 0.31 + p.y * 0.09, p.z * 0.10, [242, 248, 255], "#"));
+          this.fibSphere(14).forEach(p => put(p.x * 0.075, 0.46 + p.y * 0.07, p.z * 0.075, [248, 252, 255], "O"));
+          // Crimson Scarf + Carrot Nose (pointing along -Z = toward camera!) + Top Hat
+          for (let a = 0; a < TAU; a += 0.65) put(Math.cos(a) * 0.095, 0.39, Math.sin(a) * 0.095, [244, 42, 62], "~", 1);
+          put(0, 0.46, -0.09, [255, 128, 28], ">", 1);
+          put(0, 0.46, -0.13, [255, 128, 28], "-", 1);
+          for (let hy = 0.53; hy <= 0.65; hy += 0.04) put(0, hy, 0, [56, 66, 88], "#");
+          put(-0.06, 0.53, 0, [244, 42, 62], "=");
+          put(0.06, 0.53, 0, [244, 42, 62], "=");
+        };
+        addSnowman(-1.18, -0.56, 0.32);
+        addSnowman(1.18, -0.52, -0.32);
+
+        // Standing Grazing Reindeer with Golden Antlers near Left Foreground
+        const rx0 = -1.56, rz0 = -0.14, rRot = -0.95;
+        const rCa = Math.cos(rRot), rSa = Math.sin(rRot);
+        const putDeer = (lx, ly, lz, col, glyph, glow = 0) => {
+          this.points.push({
+            x: rx0 + lx * rCa - lz * rSa, y: ly, z: rz0 + lx * rSa + lz * rCa,
+            nx: 0, ny: 0.7, nz: -0.7, ao: 1.0,
+            type: T_CHAR, customCol: col, customGlow: glow, t0: 9.4, glyph
+          });
+        };
+        for (let dz = -0.15; dz <= 0.15; dz += 0.045) {
+          putDeer(0, 0.25, dz, [186, 122, 70], "#");
+          putDeer(-0.04, 0.27, dz, [164, 104, 58], "=");
+          putDeer(0.04, 0.27, dz, [164, 104, 58], "=");
+        }
+        [[-0.04, -0.12], [0.04, -0.12], [-0.04, 0.12], [0.04, 0.12]].forEach(([lx, lz]) => {
+          for (let ly = 0.04; ly <= 0.21; ly += 0.045) putDeer(lx, ly, lz, [136, 84, 46], "|");
+        });
+        putDeer(0, 0.36, 0.15, [186, 122, 70], "H");
+        putDeer(0, 0.43, 0.18, [202, 134, 78], "O");
+        putDeer(0, 0.33, 0.14, [244, 42, 62], "~", 1); // festive red collar
+        putDeer(-0.06, 0.53, 0.18, [255, 222, 82], "Y", 1); // golden antlers
+        putDeer(0.06, 0.53, 0.18, [255, 222, 82], "Y", 1);
+
+        // 5 Lively Animated Christmas Elves (Chú Lùn) Orbiting Cheerfully Around the Base!
+        this.elves = [];
+        for (let i = 0; i < 5; i++) {
+          this.elves.push({
+            angle: (i / 5) * TAU + 0.55,
+            radius: 1.04 + (i % 3) * 0.13,
+            speed: (i % 2 === 0 ? 1 : -1) * (0.28 + (i % 3) * 0.06),
+            redTunic: i % 2 === 0,
+            phase: i * 1.3
+          });
+        }
+
+        // Santa Sleigh Trailing Stardust Pool
+        this.santaTrail = [];
+        for (let i = 0; i < 28; i++) {
+          this.santaTrail.push({ x: 0, y: 2.86, z: 0.95, life: i / 28 });
+        }
+      }
+
       buildAtmosphere() {
         this.stars = [];
         for (let i = 0; i < 190; i++) {
@@ -1662,7 +1938,7 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         this.glowBuf = new Uint8Array(total);
 
         const aspect = this.width / Math.max(1, this.height);
-        this.baseDist = aspect < 0.75 ? 4.05 : (aspect < 1.1 ? 3.85 : 3.74);
+        this.baseDist = aspect < 0.75 ? 4.35 : (aspect < 1.1 ? 4.10 : 4.05);
         if (!this._userZoomed && !this.introZoomActive) this.camDist = this.baseDist;
       }
 
@@ -1876,6 +2152,44 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.width, this.height);
 
+        // Ethereal Northern Lights (Soft Feathered Aurora Borealis Curtains — Zero Hard Horizon Seam!)
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        for (let band = 0; band < 2; band++) {
+          const yCenter = this.height * (0.19 + band * 0.08);
+          const ribbonH = this.height * 0.16;
+          const vGrad = ctx.createLinearGradient(0, yCenter - ribbonH, 0, yCenter + ribbonH);
+          if (band === 0) {
+            vGrad.addColorStop(0.0, "rgba(16, 215, 165, 0)");
+            vGrad.addColorStop(0.35, "rgba(16, 215, 165, 0.075)");
+            vGrad.addColorStop(0.62, "rgba(56, 189, 248, 0.068)");
+            vGrad.addColorStop(1.0, "rgba(56, 189, 248, 0)");
+          } else {
+            vGrad.addColorStop(0.0, "rgba(139, 92, 246, 0)");
+            vGrad.addColorStop(0.42, "rgba(139, 92, 246, 0.065)");
+            vGrad.addColorStop(0.70, "rgba(52, 211, 153, 0.052)");
+            vGrad.addColorStop(1.0, "rgba(52, 211, 153, 0)");
+          }
+          ctx.fillStyle = vGrad;
+          ctx.beginPath();
+          const stepX = Math.max(24, this.width / 24);
+          for (let sx = 0; sx <= this.width + stepX; sx += stepX) {
+            const wave = Math.sin(sx * 0.0042 + t * (0.42 + band * 0.18) + band * 2.2) * 26
+                       + Math.cos(sx * 0.0085 - t * 0.30) * 12;
+            const py = yCenter - ribbonH * 0.55 + wave;
+            if (sx === 0) ctx.moveTo(sx, py);
+            else ctx.lineTo(sx, py);
+          }
+          for (let sx = this.width + stepX; sx >= 0; sx -= stepX) {
+            const wave = Math.sin(sx * 0.0042 + t * (0.42 + band * 0.18) + band * 2.2) * 20
+                       + Math.cos(sx * 0.0072 - t * 0.25) * 14;
+            ctx.lineTo(sx, yCenter + ribbonH * 0.85 + wave);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+
         bCtx.clearRect(0, 0, this.bloomCanvas.width, this.bloomCanvas.height);
 
         const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
@@ -2011,6 +2325,18 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
             r = PALETTE.ground[0] * gs + 255 * warmBoost;
             g = PALETTE.ground[1] * gs + 195 * warmBoost;
             b = PALETTE.ground[2] * gs + 70 * warmBoost;
+          } else if (p.type === T_BG_STONE || p.type === T_BG_ROOF) {
+            // Subtle atmospheric twilight distance shading so the Christmas Tree remains #1 Hero!
+            const s = (p.type === T_BG_ROOF ? 0.72 : 0.62) * (0.65 + 0.35 * grow);
+            r = p.customCol[0] * s; g = p.customCol[1] * s; b = p.customCol[2] * s;
+          } else if (p.type === T_BG_GLOW || p.type === T_BG_CROSS) {
+            const pulse = 0.88 + 0.20 * Math.sin(t * 2.8 + p.x * 3.0);
+            r = p.customCol[0] * pulse; g = p.customCol[1] * pulse; b = p.customCol[2] * pulse;
+            glow = p.customGlow || 1;
+          } else if (p.type === T_CHAR) {
+            const s = 0.82 + 0.28 * ndl;
+            r = p.customCol[0] * s; g = p.customCol[1] * s; b = p.customCol[2] * s;
+            glow = p.customGlow || 0;
           }
 
           chBuf[cellIdx] = glyph;
@@ -2018,6 +2344,154 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
           gBuf[cellIdx] = Math.min(255, Math.max(0, g));
           bBuf[cellIdx] = Math.min(255, Math.max(0, b));
           glowBuf[cellIdx] = glow;
+        }
+
+        // Helper: Project dynamic animated 3D ASCII characters directly into the same Z-buffer!
+        const plotDyn = (wx, wy, wz, glyph, rr, gg, bb, gl = 0, zBias = -0.02) => {
+          const rx = wx * cy - wz * sy;
+          const rz0 = wx * sy + wz * cy;
+          const ry0 = wy - centerY;
+          const ry = ry0 * cp - rz0 * sp;
+          const rz = ry0 * sp + rz0 * cp + this.camDist;
+          if (rz < 0.35) return null;
+          const invZ = projScale / rz;
+          const sx = halfW + rx * invZ;
+          const sy2 = halfH - ry * invZ;
+          const col = Math.floor(sx / this.cellW);
+          const row = Math.floor(sy2 / this.cellH);
+          if (col < 0 || col >= cols || row < 0 || row >= rows) return null;
+          const cellIdx = row * cols + col;
+          if (rz + zBias < zBuf[cellIdx]) {
+            zBuf[cellIdx] = rz + zBias;
+            chBuf[cellIdx] = glyph;
+            rBuf[cellIdx] = Math.min(255, Math.max(0, rr));
+            gBuf[cellIdx] = Math.min(255, Math.max(0, gg));
+            bBuf[cellIdx] = Math.min(255, Math.max(0, bb));
+            glowBuf[cellIdx] = gl;
+          }
+          return { sx, sy: sy2, rz };
+        };
+
+        // 2B. Dynamic Animated Foreground: 5 Cheerful Christmas Elves (Chú Lùn) Walking Around Tree!
+        if (t >= 8.6) {
+          const elfFade = Math.min(1, (t - 8.6) / 0.8);
+          for (let i = 0; i < this.elves.length; i++) {
+            const elf = this.elves[i];
+            elf.angle = (elf.angle + elf.speed * dt) % TAU;
+            const ex = Math.cos(elf.angle) * elf.radius;
+            const ez = Math.sin(elf.angle) * elf.radius;
+            const hop = Math.abs(Math.sin(t * 7.2 + elf.phase)) * 0.065;
+            const swing = Math.sin(t * 7.2 + elf.phase) * 0.048;
+            const tx = -Math.sin(elf.angle) * Math.sign(elf.speed);
+            const tz = Math.cos(elf.angle) * Math.sign(elf.speed);
+            const tunic = elf.redTunic ? [246, 48, 68] : [48, 224, 108];
+            const hat   = elf.redTunic ? [48, 224, 108] : [246, 48, 68];
+
+            // Boots (stepping!)
+            plotDyn(ex + tx * swing, 0.05 + hop * 0.4, ez + tz * swing, "|", 138 * elfFade, 94 * elfFade, 62 * elfFade, 0, -0.04);
+            plotDyn(ex - tx * swing, 0.05, ez - tz * swing, "|", 138 * elfFade, 94 * elfFade, 62 * elfFade, 0, -0.04);
+            // Festive Tunic (Fuller 2-tier silhouette) + Golden Belt
+            plotDyn(ex, 0.14 + hop, ez, "#", tunic[0] * elfFade, tunic[1] * elfFade, tunic[2] * elfFade, 1, -0.04);
+            plotDyn(ex - tx * 0.04, 0.16 + hop, ez - tz * 0.04, "#", tunic[0] * elfFade, tunic[1] * elfFade, tunic[2] * elfFade, 0, -0.04);
+            plotDyn(ex, 0.23 + hop, ez, "=", 255 * elfFade, 218 * elfFade, 72 * elfFade, 1, -0.05);
+            // Rosy Face
+            plotDyn(ex, 0.32 + hop, ez, "O", 255 * elfFade, 220 * elfFade, 184 * elfFade, 0, -0.05);
+            // Pointed Elf Hat + White Pom-Pom!
+            plotDyn(ex, 0.40 + hop, ez, "^", hat[0] * elfFade, hat[1] * elfFade, hat[2] * elfFade, 1, -0.05);
+            plotDyn(ex, 0.48 + hop, ez, "*", 255 * elfFade, 250 * elfFade, 240 * elfFade, 1, -0.05);
+            // Tiny Glowing Hand Lantern carried ahead!
+            plotDyn(ex + tx * 0.13, 0.23 + hop, ez + tz * 0.13, "✦", 255 * elfFade, 232 * elfFade, 96 * elfFade, 2, -0.06);
+          }
+        }
+
+        // 2C. Dynamic Animated Sky: Flying Santa Sleigh + 3 Prancing Reindeer (Rudolph Red Nose!)
+        // Orbits gracefully across upper arctic sky (+Z backdrop) so it is 100% framed on Desktop & Mobile!
+        let rudolphScreen = null;
+        if (t >= 7.5) {
+          const sFade = Math.min(1, (t - 7.5) / 1.2);
+          const sa = t * 0.28 + 0.55;
+          const sRx = 1.98, sRz = 0.96;
+          const sx0 = Math.cos(sa) * sRx;
+          const sz0 = 1.05 + Math.sin(sa) * sRz;
+          const sy0 = 2.74 + Math.sin(sa * 2.0) * 0.15;
+
+          // Tangent forward direction of flight
+          const vx = -Math.sin(sa) * sRx;
+          const vz = Math.cos(sa) * sRz;
+          const vL = Math.hypot(vx, vz) || 1;
+          const fx = vx / vL, fz = vz / vL;
+
+          // Sleigh Runners (Gold) + Crimson Body + Santa + Gift Sack
+          for (let k = -0.32; k <= 0.22; k += 0.08) {
+            plotDyn(sx0 + fx * k, sy0 - 0.06, sz0 + fz * k, "=", 255 * sFade, 218 * sFade, 72 * sFade, 1, -0.08);
+            plotDyn(sx0 + fx * k, sy0 + 0.03, sz0 + fz * k, "#", 248 * sFade, 42 * sFade, 62 * sFade, 1, -0.08);
+          }
+          // Curved Front Sleigh Nose
+          plotDyn(sx0 + fx * 0.27, sy0 + 0.07, sz0 + fz * 0.27, "/", 255 * sFade, 224 * sFade, 88 * sFade, 1, -0.08);
+          // Santa Claus (Red coat + White beard + Red Santa hat + pom-pom)
+          plotDyn(sx0 + fx * 0.02, sy0 + 0.14, sz0 + fz * 0.02, "@", 252 * sFade, 46 * sFade, 66 * sFade, 1, -0.08);
+          plotDyn(sx0 + fx * 0.02, sy0 + 0.23, sz0 + fz * 0.02, "O", 255 * sFade, 246 * sFade, 236 * sFade, 1, -0.08);
+          plotDyn(sx0 + fx * 0.02, sy0 + 0.31, sz0 + fz * 0.02, "^", 255 * sFade, 46 * sFade, 66 * sFade, 2, -0.08);
+          // Bulging Golden Gift Sack in Back
+          plotDyn(sx0 - fx * 0.18, sy0 + 0.14, sz0 - fz * 0.18, "%", 255 * sFade, 206 * sFade, 78 * sFade, 1, -0.08);
+          plotDyn(sx0 - fx * 0.25, sy0 + 0.12, sz0 - fz * 0.25, "#", 255 * sFade, 188 * sFade, 64 * sFade, 1, -0.08);
+
+          // 3 Prancing Reindeer Leading Ahead + Golden Reins!
+          const deerDist = [0.54, 0.92, 1.32];
+          deerDist.forEach((dd, idx) => {
+            const bob = Math.sin(t * 7.5 + idx * 1.4) * 0.065;
+            const dx = sx0 + fx * dd;
+            const dz = sz0 + fz * dd;
+            const dy = sy0 + 0.04 + bob;
+            // Golden rein between sleigh and deer
+            plotDyn(sx0 + fx * (dd - 0.18), sy0 + 0.06 + bob * 0.5, sz0 + fz * (dd - 0.18), "-", 255 * sFade, 224 * sFade, 102 * sFade, 1, -0.06);
+            // Prancing legs + Reindeer body + neck/head + glowing golden antlers
+            plotDyn(dx - fx * 0.06, dy - 0.08, dz - fz * 0.06, "/", 168 * sFade, 108 * sFade, 62 * sFade, 0, -0.08);
+            plotDyn(dx + fx * 0.04, dy - 0.08, dz + fz * 0.04, "\\", 168 * sFade, 108 * sFade, 62 * sFade, 0, -0.08);
+            plotDyn(dx - fx * 0.07, dy, dz - fz * 0.07, "=", 206 * sFade, 138 * sFade, 82 * sFade, 0, -0.08);
+            plotDyn(dx, dy, dz, "#", 214 * sFade, 146 * sFade, 88 * sFade, 0, -0.08);
+            plotDyn(dx + fx * 0.08, dy + 0.08, dz + fz * 0.08, "O", 224 * sFade, 158 * sFade, 98 * sFade, 0, -0.08);
+            plotDyn(dx + fx * 0.08, dy + 0.18, dz + fz * 0.08, "Y", 255 * sFade, 224 * sFade, 96 * sFade, 1, -0.08);
+            // Lead Reindeer = RUDOLPH with blazing glowing red nose!
+            if (idx === 2) {
+              rudolphScreen = plotDyn(dx + fx * 0.18, dy + 0.08, dz + fz * 0.18, "@", 255 * sFade, 36 * sFade, 52 * sFade, 2, -0.10);
+            }
+          });
+
+          // Trailing Golden Stardust Behind Sleigh
+          for (let i = 0; i < this.santaTrail.length; i++) {
+            const st = this.santaTrail[i];
+            st.life -= dt * 0.50;
+            if (st.life <= 0) {
+              st.life = 1.0;
+              st.x = sx0 - fx * 0.34 + (Math.random() - 0.5) * 0.12;
+              st.y = sy0 + (Math.random() - 0.5) * 0.10;
+              st.z = sz0 - fz * 0.34 + (Math.random() - 0.5) * 0.12;
+            } else {
+              st.y -= dt * 0.15;
+            }
+            const a = st.life * sFade;
+            if (a > 0.12) {
+              plotDyn(st.x, st.y, st.z, st.life > 0.6 ? "✦" : "·", 255 * a, 228 * a, 114 * a, st.life > 0.5 ? 2 : 1, -0.06);
+            }
+          }
+        }
+
+        // 2D. Dynamic Rising ASCII Chimney Smoke (~ ° ·) from Backdrop Cottages
+        if (t >= 8.4) {
+          for (let c = 0; c < this.chimneys.length; c++) {
+            const ch = this.chimneys[c];
+            for (let p = 0; p < 4; p++) {
+              const u = ((t * 0.32 + ch.phase + p * 0.25) % 1.0);
+              const sx = ch.x + Math.sin(t * 1.4 + ch.phase + u * 4.0) * 0.10 + u * 0.14;
+              const sy = ch.y + u * 0.72;
+              const sz = ch.z;
+              const fade = Math.sin(u * Math.PI) * 0.62;
+              if (fade > 0.08) {
+                plotDyn(sx, sy, sz, u < 0.45 ? "~" : (u < 0.75 ? "°" : "·"), 198 * fade, 214 * fade, 238 * fade, 0, 0);
+              }
+            }
+          }
         }
 
         // 3. Flush Monospace Characters + Bloom Buffer
@@ -2098,7 +2572,10 @@ Mong rằng ánh đèn lung linh đêm nay sẽ mang đến thật nhiều niề
         ctx.drawImage(this.bloomCanvas, 0, 0, this.width, this.height);
         ctx.restore();
 
-        // 6. Optical Cross-Flare Starburst Glints
+        // 6. Optical Cross-Flare Starburst Glints (Star Crown + Rudolph Red Nose + Brightest Fairy Lights)
+        if (rudolphScreen) {
+          this.drawLensFlare(ctx, rudolphScreen.sx, rudolphScreen.sy, 18, 255, 42, 64, 0.90);
+        }
         if (t >= 8.8) {
           const syStar = (2.69 - centerY) * cp;
           const szStar = (2.69 - centerY) * sp + this.camDist;
